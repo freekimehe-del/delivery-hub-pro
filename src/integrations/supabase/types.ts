@@ -14,16 +14,708 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          address: string | null
+          billing_email: string | null
+          city: string | null
+          company_name: string
+          country: string | null
+          created_at: string
+          email: string
+          id: string
+          payment_terms: number | null
+          phone: string | null
+          postal_code: string | null
+          profile_id: string | null
+          state: string | null
+          status: string | null
+          total_orders: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          billing_email?: string | null
+          city?: string | null
+          company_name: string
+          country?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          payment_terms?: number | null
+          phone?: string | null
+          postal_code?: string | null
+          profile_id?: string | null
+          state?: string | null
+          status?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          billing_email?: string | null
+          city?: string | null
+          company_name?: string
+          country?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          payment_terms?: number | null
+          phone?: string | null
+          postal_code?: string | null
+          profile_id?: string | null
+          state?: string | null
+          status?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          created_at: string
+          current_location: Json | null
+          employee_id: string | null
+          id: string
+          is_online: boolean | null
+          last_location_update: string | null
+          license_expiry: string | null
+          license_number: string | null
+          on_time_rate: number | null
+          profile_id: string | null
+          rating: number | null
+          shift_end: string | null
+          shift_start: string | null
+          status: Database["public"]["Enums"]["driver_status"]
+          total_deliveries: number | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_location?: Json | null
+          employee_id?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_location_update?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          on_time_rate?: number | null
+          profile_id?: string | null
+          rating?: number | null
+          shift_end?: string | null
+          shift_start?: string | null
+          status?: Database["public"]["Enums"]["driver_status"]
+          total_deliveries?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_location?: Json | null
+          employee_id?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_location_update?: string | null
+          license_expiry?: string | null
+          license_number?: string | null
+          on_time_rate?: number | null
+          profile_id?: string | null
+          rating?: number | null
+          shift_end?: string | null
+          shift_start?: string | null
+          status?: Database["public"]["Enums"]["driver_status"]
+          total_deliveries?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drivers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          location: Json | null
+          notes: string | null
+          order_id: string
+          previous_status: Database["public"]["Enums"]["order_status"] | null
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          order_id: string
+          previous_status?: Database["public"]["Enums"]["order_status"] | null
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          order_id?: string
+          previous_status?: Database["public"]["Enums"]["order_status"] | null
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          actual_delivery_time: string | null
+          actual_distance: number | null
+          actual_pickup_time: string | null
+          base_rate: number | null
+          cancellation_reason: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_reference: string | null
+          delivery_window_end: string | null
+          delivery_window_start: string | null
+          distance_charge: number | null
+          driver_id: string | null
+          dropoff_address: string
+          dropoff_city: string | null
+          dropoff_contact_name: string | null
+          dropoff_contact_phone: string | null
+          dropoff_coordinates: Json | null
+          dropoff_instructions: string | null
+          dropoff_postal_code: string | null
+          dropoff_state: string | null
+          estimated_delivery_time: string | null
+          estimated_distance: number | null
+          estimated_pickup_time: string | null
+          external_id: string | null
+          failure_reason: string | null
+          id: string
+          is_fragile: boolean | null
+          notes: string | null
+          package_count: number | null
+          package_dimensions: Json | null
+          package_type: string | null
+          package_weight: number | null
+          pickup_address: string
+          pickup_city: string | null
+          pickup_contact_name: string | null
+          pickup_contact_phone: string | null
+          pickup_coordinates: Json | null
+          pickup_instructions: string | null
+          pickup_postal_code: string | null
+          pickup_state: string | null
+          pickup_window_end: string | null
+          pickup_window_start: string | null
+          pod_captured_at: string | null
+          pod_notes: string | null
+          pod_photo_urls: Json | null
+          pod_recipient_name: string | null
+          pod_signature_url: string | null
+          pod_type: string | null
+          priority: number | null
+          requires_signature: boolean | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["order_status"]
+          surcharges: number | null
+          total_amount: number | null
+          tracking_number: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_delivery_time?: string | null
+          actual_distance?: number | null
+          actual_pickup_time?: string | null
+          base_rate?: number | null
+          cancellation_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_reference?: string | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          distance_charge?: number | null
+          driver_id?: string | null
+          dropoff_address: string
+          dropoff_city?: string | null
+          dropoff_contact_name?: string | null
+          dropoff_contact_phone?: string | null
+          dropoff_coordinates?: Json | null
+          dropoff_instructions?: string | null
+          dropoff_postal_code?: string | null
+          dropoff_state?: string | null
+          estimated_delivery_time?: string | null
+          estimated_distance?: number | null
+          estimated_pickup_time?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          is_fragile?: boolean | null
+          notes?: string | null
+          package_count?: number | null
+          package_dimensions?: Json | null
+          package_type?: string | null
+          package_weight?: number | null
+          pickup_address: string
+          pickup_city?: string | null
+          pickup_contact_name?: string | null
+          pickup_contact_phone?: string | null
+          pickup_coordinates?: Json | null
+          pickup_instructions?: string | null
+          pickup_postal_code?: string | null
+          pickup_state?: string | null
+          pickup_window_end?: string | null
+          pickup_window_start?: string | null
+          pod_captured_at?: string | null
+          pod_notes?: string | null
+          pod_photo_urls?: Json | null
+          pod_recipient_name?: string | null
+          pod_signature_url?: string | null
+          pod_type?: string | null
+          priority?: number | null
+          requires_signature?: boolean | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["order_status"]
+          surcharges?: number | null
+          total_amount?: number | null
+          tracking_number: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_delivery_time?: string | null
+          actual_distance?: number | null
+          actual_pickup_time?: string | null
+          base_rate?: number | null
+          cancellation_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_reference?: string | null
+          delivery_window_end?: string | null
+          delivery_window_start?: string | null
+          distance_charge?: number | null
+          driver_id?: string | null
+          dropoff_address?: string
+          dropoff_city?: string | null
+          dropoff_contact_name?: string | null
+          dropoff_contact_phone?: string | null
+          dropoff_coordinates?: Json | null
+          dropoff_instructions?: string | null
+          dropoff_postal_code?: string | null
+          dropoff_state?: string | null
+          estimated_delivery_time?: string | null
+          estimated_distance?: number | null
+          estimated_pickup_time?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          is_fragile?: boolean | null
+          notes?: string | null
+          package_count?: number | null
+          package_dimensions?: Json | null
+          package_type?: string | null
+          package_weight?: number | null
+          pickup_address?: string
+          pickup_city?: string | null
+          pickup_contact_name?: string | null
+          pickup_contact_phone?: string | null
+          pickup_coordinates?: Json | null
+          pickup_instructions?: string | null
+          pickup_postal_code?: string | null
+          pickup_state?: string | null
+          pickup_window_end?: string | null
+          pickup_window_start?: string | null
+          pod_captured_at?: string | null
+          pod_notes?: string | null
+          pod_photo_urls?: Json | null
+          pod_recipient_name?: string | null
+          pod_signature_url?: string | null
+          pod_type?: string | null
+          priority?: number | null
+          requires_signature?: boolean | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["order_status"]
+          surcharges?: number | null
+          total_amount?: number | null
+          tracking_number?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company_name: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      service_zones: {
+        Row: {
+          base_rate: number
+          boundaries: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          minimum_charge: number | null
+          name: string
+          operating_hours: Json | null
+          per_mile_rate: number
+          per_minute_wait_rate: number | null
+          surge_multiplier: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_rate: number
+          boundaries?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          minimum_charge?: number | null
+          name: string
+          operating_hours?: Json | null
+          per_mile_rate: number
+          per_minute_wait_rate?: number | null
+          surge_multiplier?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_rate?: number
+          boundaries?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          minimum_charge?: number | null
+          name?: string
+          operating_hours?: Json | null
+          per_mile_rate?: number
+          per_minute_wait_rate?: number | null
+          surge_multiplier?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          capacity_volume: number | null
+          capacity_weight: number | null
+          color: string | null
+          created_at: string
+          current_location: Json | null
+          fuel_type: string | null
+          id: string
+          insurance_expiry: string | null
+          last_location_update: string | null
+          last_service_date: string | null
+          license_plate: string
+          make: string | null
+          mileage: number | null
+          model: string | null
+          name: string
+          next_service_due: string | null
+          registration_expiry: string | null
+          status: Database["public"]["Enums"]["vehicle_status"]
+          updated_at: string
+          vehicle_type: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          capacity_volume?: number | null
+          capacity_weight?: number | null
+          color?: string | null
+          created_at?: string
+          current_location?: Json | null
+          fuel_type?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          last_location_update?: string | null
+          last_service_date?: string | null
+          license_plate: string
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          name: string
+          next_service_due?: string | null
+          registration_expiry?: string | null
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          updated_at?: string
+          vehicle_type?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          capacity_volume?: number | null
+          capacity_weight?: number | null
+          color?: string | null
+          created_at?: string
+          current_location?: Json | null
+          fuel_type?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          last_location_update?: string | null
+          last_service_date?: string | null
+          license_plate?: string
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          name?: string
+          next_service_due?: string | null
+          registration_expiry?: string | null
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          updated_at?: string
+          vehicle_type?: string
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          attempt_number: number | null
+          created_at: string
+          delivered_at: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          attempt_number?: number | null
+          created_at?: string
+          delivered_at?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          attempt_number?: number | null
+          created_at?: string
+          delivered_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          events: string[]
+          id: string
+          is_active: boolean | null
+          last_status_code: number | null
+          last_triggered_at: string | null
+          retry_count: number | null
+          secret: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          events: string[]
+          id?: string
+          is_active?: boolean | null
+          last_status_code?: number | null
+          last_triggered_at?: string | null
+          retry_count?: number | null
+          secret?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean | null
+          last_status_code?: number | null
+          last_triggered_at?: string | null
+          retry_count?: number | null
+          secret?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_dispatcher: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "admin"
+        | "dispatcher"
+        | "fleet_manager"
+        | "driver"
+        | "customer"
+      driver_status: "pending" | "active" | "suspended" | "inactive"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "dispatched"
+        | "driver_accepted"
+        | "en_route_pickup"
+        | "arrived_pickup"
+        | "picked_up"
+        | "en_route_delivery"
+        | "arrived_delivery"
+        | "delivered"
+        | "failed"
+        | "cancelled"
+        | "rescheduled"
+      service_type: "express" | "same_day" | "standard" | "economy"
+      vehicle_status: "active" | "idle" | "maintenance" | "offline"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +842,33 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "admin",
+        "dispatcher",
+        "fleet_manager",
+        "driver",
+        "customer",
+      ],
+      driver_status: ["pending", "active", "suspended", "inactive"],
+      order_status: [
+        "pending",
+        "confirmed",
+        "dispatched",
+        "driver_accepted",
+        "en_route_pickup",
+        "arrived_pickup",
+        "picked_up",
+        "en_route_delivery",
+        "arrived_delivery",
+        "delivered",
+        "failed",
+        "cancelled",
+        "rescheduled",
+      ],
+      service_type: ["express", "same_day", "standard", "economy"],
+      vehicle_status: ["active", "idle", "maintenance", "offline"],
+    },
   },
 } as const
