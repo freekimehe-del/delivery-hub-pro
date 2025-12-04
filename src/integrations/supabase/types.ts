@@ -510,75 +510,117 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          acquisition_cost: number | null
+          acquisition_date: string | null
+          acquisition_type: string | null
+          asset_code: string | null
           capacity_volume: number | null
           capacity_weight: number | null
           color: string | null
+          condition: string | null
           created_at: string
           current_location: Json | null
+          fuel_card_number: string | null
           fuel_type: string | null
           id: string
           insurance_expiry: string | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
           last_location_update: string | null
           last_service_date: string | null
+          lease_end_date: string | null
           license_plate: string
           make: string | null
           mileage: number | null
           model: string | null
+          monthly_lease_cost: number | null
           name: string
           next_service_due: string | null
+          notes: string | null
+          purchase_vendor: string | null
           registration_expiry: string | null
           status: Database["public"]["Enums"]["vehicle_status"]
+          telematics_device_id: string | null
           updated_at: string
           vehicle_type: string
           vin: string | null
+          warranty_expiry: string | null
           year: number | null
         }
         Insert: {
+          acquisition_cost?: number | null
+          acquisition_date?: string | null
+          acquisition_type?: string | null
+          asset_code?: string | null
           capacity_volume?: number | null
           capacity_weight?: number | null
           color?: string | null
+          condition?: string | null
           created_at?: string
           current_location?: Json | null
+          fuel_card_number?: string | null
           fuel_type?: string | null
           id?: string
           insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
           last_location_update?: string | null
           last_service_date?: string | null
+          lease_end_date?: string | null
           license_plate: string
           make?: string | null
           mileage?: number | null
           model?: string | null
+          monthly_lease_cost?: number | null
           name: string
           next_service_due?: string | null
+          notes?: string | null
+          purchase_vendor?: string | null
           registration_expiry?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
+          telematics_device_id?: string | null
           updated_at?: string
           vehicle_type?: string
           vin?: string | null
+          warranty_expiry?: string | null
           year?: number | null
         }
         Update: {
+          acquisition_cost?: number | null
+          acquisition_date?: string | null
+          acquisition_type?: string | null
+          asset_code?: string | null
           capacity_volume?: number | null
           capacity_weight?: number | null
           color?: string | null
+          condition?: string | null
           created_at?: string
           current_location?: Json | null
+          fuel_card_number?: string | null
           fuel_type?: string | null
           id?: string
           insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
           last_location_update?: string | null
           last_service_date?: string | null
+          lease_end_date?: string | null
           license_plate?: string
           make?: string | null
           mileage?: number | null
           model?: string | null
+          monthly_lease_cost?: number | null
           name?: string
           next_service_due?: string | null
+          notes?: string | null
+          purchase_vendor?: string | null
           registration_expiry?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
+          telematics_device_id?: string | null
           updated_at?: string
           vehicle_type?: string
           vin?: string | null
+          warranty_expiry?: string | null
           year?: number | null
         }
         Relationships: []
