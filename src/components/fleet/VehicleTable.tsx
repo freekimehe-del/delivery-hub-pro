@@ -35,8 +35,8 @@ import { AddVehicleDialog } from "./AddVehicleDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const statusConfig: Record<VehicleStatus, { label: string; variant: "success" | "warning" | "info" | "offline" }> = {
-  available: { label: "Available", variant: "success" },
-  in_use: { label: "In Use", variant: "info" },
+  active: { label: "Active", variant: "success" },
+  idle: { label: "Idle", variant: "info" },
   maintenance: { label: "Maintenance", variant: "warning" },
   offline: { label: "Offline", variant: "offline" },
 };
