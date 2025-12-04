@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type VehicleStatus = "available" | "in_use" | "maintenance" | "offline";
+export type VehicleStatus = "active" | "idle" | "maintenance" | "offline";
 export type AcquisitionType = "purchase" | "lease" | "rental";
 export type VehicleCondition = "excellent" | "good" | "fair" | "poor";
 
