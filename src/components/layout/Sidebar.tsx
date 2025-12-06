@@ -24,6 +24,9 @@ import {
   Webhook,
   Key,
   BookOpen,
+  Warehouse,
+  Gavel,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -70,6 +73,17 @@ const navItems: NavItem[] = [
     ],
   },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  {
+    icon: Warehouse,
+    label: "Customs",
+    path: "/customs",
+    children: [
+      { icon: Package, label: "Consignments", path: "/customs/consignments" },
+      { icon: Warehouse, label: "Warehouses", path: "/customs/warehouses" },
+      { icon: ScrollText, label: "HS Codes", path: "/customs/hs-codes" },
+      { icon: Gavel, label: "Auctions", path: "/customs/auctions" },
+    ],
+  },
   {
     icon: Code2,
     label: "API",
