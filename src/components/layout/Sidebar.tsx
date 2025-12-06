@@ -143,7 +143,7 @@ export function Sidebar() {
                 exit={{ opacity: 0, x: -10 }}
                 className="font-bold text-lg tracking-tight"
               >
-                FleetOps
+                imatech
               </motion.span>
             )}
           </AnimatePresence>
