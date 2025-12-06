@@ -69,7 +69,7 @@ const endpoints = [
 ];
 
 const codeExample = `// Example: Create a new order
-const response = await fetch('https://api.fleetops.io/v1/orders', {
+const response = await fetch('https://api.imatech.io/v1/orders', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
@@ -134,7 +134,7 @@ export default function ApiDocs() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">API Documentation</h1>
         <p className="text-muted-foreground mt-1">
-          Integrate FleetOps into your applications with our REST API.
+          Integrate imatech into your applications with our REST API.
         </p>
       </div>
 
@@ -287,7 +287,7 @@ export default function ApiDocs() {
           <div>
             <h4 className="font-medium">Base URL</h4>
             <code className="text-sm text-primary mt-1 block">
-              https://api.fleetops.io/v1
+              https://api.imatech.io/v1
             </code>
             <p className="text-sm text-muted-foreground mt-2">
               All API requests should be made to this base URL. Authentication is required

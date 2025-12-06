@@ -62,8 +62,8 @@ export default function Settings() {
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="flex flex-col items-center gap-4">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src="https://api.dicebear.com/7.x/initials/svg?seed=FleetOps" />
-                    <AvatarFallback>FO</AvatarFallback>
+                    <AvatarImage src="https://api.dicebear.com/7.x/initials/svg?seed=imatech" />
+                    <AvatarFallback>IM</AvatarFallback>
                   </Avatar>
                   <Button variant="outline" size="sm" className="gap-2">
                     <Upload className="w-4 h-4" />
@@ -74,17 +74,17 @@ export default function Settings() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="companyName">Company Name</Label>
-                      <Input id="companyName" defaultValue="FleetOps Inc." />
+                      <Input id="companyName" defaultValue="imatech Inc." />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="website">Website</Label>
-                      <Input id="website" defaultValue="https://fleetops.io" />
+                      <Input id="website" defaultValue="https://imatech.io" />
                     </div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" defaultValue="contact@fleetops.io" />
+                      <Input id="email" defaultValue="contact@imatech.io" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone</Label>
