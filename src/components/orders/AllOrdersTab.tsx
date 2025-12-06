@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import {
   Package,
   Search,
-  Filter,
   Grid3X3,
   List,
   Plus,
   RefreshCw,
   Download,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useOrders, OrderStatus } from "@/hooks/useOrders";
+import { useValidateOrders } from "@/hooks/useWorkflow";
 import { OrderCard } from "./OrderCard";
 import { AddOrderDialog } from "./AddOrderDialog";
 import { OrderDetailsSheet } from "./OrderDetailsSheet";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const statusFilters = [
   { value: "all", label: "All Orders" },
@@ -45,10 +49,13 @@ export function AllOrdersTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedForValidation, setSelectedForValidation] = useState<string[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   const { data: orders, isLoading, refetch } = useOrders(
     statusFilter === "all" ? undefined : (statusFilter as OrderStatus)
   );
+  const validateOrders = useValidateOrders();
 
   const filteredOrders = orders?.filter((order) => {
     const matchesSearch =
@@ -58,6 +65,38 @@ export function AllOrdersTab() {
       order.dropoff_address.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
+  const pendingOrders = filteredOrders?.filter((o) => o.status === "pending") || [];
+
+  const handleSelectForValidation = (orderId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedForValidation([...selectedForValidation, orderId]);
+    } else {
+      setSelectedForValidation(selectedForValidation.filter((id) => id !== orderId));
+    }
+  };
+
+  const handleValidateSelected = () => {
+    if (selectedForValidation.length === 0) {
+      toast.error("Select at least one order to validate");
+      return;
+    }
+    validateOrders.mutate(selectedForValidation, {
+      onSuccess: () => {
+        setSelectedForValidation([]);
+        setIsSelecting(false);
+      },
+    });
+  };
+
+  const handleValidateAll = () => {
+    const pendingIds = pendingOrders.map((o) => o.id);
+    if (pendingIds.length === 0) {
+      toast.error("No pending orders to validate");
+      return;
+    }
+    validateOrders.mutate(pendingIds);
+  };
 
   return (
     <div className="space-y-4">
@@ -88,6 +127,57 @@ export function AllOrdersTab() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Validation Actions */}
+          {pendingOrders.length > 0 && (
+            <>
+              {isSelecting ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsSelecting(false);
+                      setSelectedForValidation([]);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleValidateSelected}
+                    disabled={
+                      selectedForValidation.length === 0 || validateOrders.isPending
+                    }
+                    className="gap-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Validate ({selectedForValidation.length})
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSelecting(true)}
+                  >
+                    Select to Validate
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleValidateAll}
+                    disabled={validateOrders.isPending}
+                    className="gap-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Validate All ({pendingOrders.length})
+                  </Button>
+                </>
+              )}
+            </>
+          )}
+
           <Button variant="outline" size="icon" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -132,27 +222,38 @@ export function AllOrdersTab() {
           )}
         >
           {filteredOrders?.map((order, index) => (
-            <OrderCard
-              key={order.id}
-              order={{
-                id: order.id,
-                trackingNumber: order.tracking_number,
-                status: order.status.replace(/_/g, "-") as any,
-                customer: order.customer?.company_name || "Unknown Customer",
-                pickup: order.pickup_address,
-                dropoff: order.dropoff_address,
-                driver: order.driver?.profile?.full_name || undefined,
-                eta: order.estimated_delivery_time
-                  ? new Date(order.estimated_delivery_time).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : undefined,
-                createdAt: new Date(order.created_at).toLocaleString(),
-              }}
-              index={index}
-              onViewDetails={() => setSelectedOrderId(order.id)}
-            />
+            <div key={order.id} className="relative">
+              {isSelecting && order.status === "pending" && (
+                <div className="absolute top-3 left-3 z-10">
+                  <Checkbox
+                    checked={selectedForValidation.includes(order.id)}
+                    onCheckedChange={(checked) =>
+                      handleSelectForValidation(order.id, checked as boolean)
+                    }
+                  />
+                </div>
+              )}
+              <OrderCard
+                order={{
+                  id: order.id,
+                  trackingNumber: order.tracking_number,
+                  status: order.status.replace(/_/g, "-") as any,
+                  customer: order.customer?.company_name || "Unknown Customer",
+                  pickup: order.pickup_address,
+                  dropoff: order.dropoff_address,
+                  driver: order.driver?.profile?.full_name || undefined,
+                  eta: order.estimated_delivery_time
+                    ? new Date(order.estimated_delivery_time).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : undefined,
+                  createdAt: new Date(order.created_at).toLocaleString(),
+                }}
+                index={index}
+                onViewDetails={() => setSelectedOrderId(order.id)}
+              />
+            </div>
           ))}
         </div>
       )}
