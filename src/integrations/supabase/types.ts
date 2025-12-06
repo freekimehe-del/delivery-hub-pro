@@ -448,6 +448,108 @@ export type Database = {
           },
         ]
       }
+      dispatch_batch_orders: {
+        Row: {
+          created_at: string
+          dispatch_batch_id: string
+          id: string
+          order_id: string
+          sequence_number: number | null
+        }
+        Insert: {
+          created_at?: string
+          dispatch_batch_id: string
+          id?: string
+          order_id: string
+          sequence_number?: number | null
+        }
+        Update: {
+          created_at?: string
+          dispatch_batch_id?: string
+          id?: string
+          order_id?: string
+          sequence_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_batch_orders_dispatch_batch_id_fkey"
+            columns: ["dispatch_batch_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_batch_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dispatch_batches: {
+        Row: {
+          batch_number: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          dispatched_at: string | null
+          driver_id: string | null
+          id: string
+          notes: string | null
+          priority: string | null
+          status: string
+          total_orders: number | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          batch_number: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dispatched_at?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string
+          total_orders?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          batch_number?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          dispatched_at?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string
+          total_orders?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_batches_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_batches_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string
@@ -809,6 +911,7 @@ export type Database = {
           customer_reference: string | null
           delivery_window_end: string | null
           delivery_window_start: string | null
+          dispatch_batch_id: string | null
           distance_charge: number | null
           driver_id: string | null
           dropoff_address: string
@@ -849,6 +952,7 @@ export type Database = {
           pod_type: string | null
           priority: number | null
           requires_signature: boolean | null
+          route_id: string | null
           service_type: Database["public"]["Enums"]["service_type"]
           status: Database["public"]["Enums"]["order_status"]
           surcharges: number | null
@@ -870,6 +974,7 @@ export type Database = {
           customer_reference?: string | null
           delivery_window_end?: string | null
           delivery_window_start?: string | null
+          dispatch_batch_id?: string | null
           distance_charge?: number | null
           driver_id?: string | null
           dropoff_address: string
@@ -910,6 +1015,7 @@ export type Database = {
           pod_type?: string | null
           priority?: number | null
           requires_signature?: boolean | null
+          route_id?: string | null
           service_type?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["order_status"]
           surcharges?: number | null
@@ -931,6 +1037,7 @@ export type Database = {
           customer_reference?: string | null
           delivery_window_end?: string | null
           delivery_window_start?: string | null
+          dispatch_batch_id?: string | null
           distance_charge?: number | null
           driver_id?: string | null
           dropoff_address?: string
@@ -971,6 +1078,7 @@ export type Database = {
           pod_type?: string | null
           priority?: number | null
           requires_signature?: boolean | null
+          route_id?: string | null
           service_type?: Database["public"]["Enums"]["service_type"]
           status?: Database["public"]["Enums"]["order_status"]
           surcharges?: number | null
@@ -988,10 +1096,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_dispatch_batch_id_fkey"
+            columns: ["dispatch_batch_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_batches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
             referencedColumns: ["id"]
           },
           {
@@ -1038,6 +1160,147 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      route_stops: {
+        Row: {
+          actual_arrival: string | null
+          actual_departure: string | null
+          created_at: string
+          estimated_arrival: string | null
+          estimated_departure: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          route_id: string
+          status: string
+          stop_number: number
+          stop_type: string | null
+          updated_at: string
+          wait_time_minutes: number | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          created_at?: string
+          estimated_arrival?: string | null
+          estimated_departure?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          route_id: string
+          status?: string
+          stop_number: number
+          stop_type?: string | null
+          updated_at?: string
+          wait_time_minutes?: number | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          created_at?: string
+          estimated_arrival?: string | null
+          estimated_departure?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          route_id?: string
+          status?: string
+          stop_number?: number
+          stop_type?: string | null
+          updated_at?: string
+          wait_time_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_stops_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routes: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          completed_stops: number | null
+          created_at: string
+          created_by: string | null
+          driver_id: string | null
+          id: string
+          notes: string | null
+          optimization_score: number | null
+          planned_end: string | null
+          planned_start: string | null
+          route_number: string
+          status: string
+          total_distance: number | null
+          total_stops: number | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          optimization_score?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          route_number: string
+          status?: string
+          total_distance?: number | null
+          total_stops?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          completed_stops?: number | null
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          optimization_score?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          route_number?: string
+          status?: string
+          total_distance?: number | null
+          total_stops?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_zones: {
         Row: {
