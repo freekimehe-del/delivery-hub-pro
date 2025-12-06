@@ -14,6 +14,319 @@ export type Database = {
   }
   public: {
     Tables: {
+      auction_bids: {
+        Row: {
+          auction_id: string | null
+          bid_amount: number
+          bid_time: string
+          bidder_contact: string | null
+          bidder_name: string
+          bidder_ntn: string | null
+          created_at: string
+          id: string
+          is_winning: boolean | null
+        }
+        Insert: {
+          auction_id?: string | null
+          bid_amount: number
+          bid_time?: string
+          bidder_contact?: string | null
+          bidder_name: string
+          bidder_ntn?: string | null
+          created_at?: string
+          id?: string
+          is_winning?: boolean | null
+        }
+        Update: {
+          auction_id?: string | null
+          bid_amount?: number
+          bid_time?: string
+          bidder_contact?: string | null
+          bidder_name?: string
+          bidder_ntn?: string | null
+          created_at?: string
+          id?: string
+          is_winning?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auctions: {
+        Row: {
+          auction_number: string
+          auction_type: Database["public"]["Enums"]["auction_type"]
+          auctioneer_license: string | null
+          auctioneer_name: string | null
+          consignment_id: string | null
+          created_at: string
+          created_by: string | null
+          current_bid: number | null
+          ended_at: string | null
+          id: string
+          notes: string | null
+          reserve_price: number
+          scheduled_date: string
+          started_at: string | null
+          starting_bid: number | null
+          status: Database["public"]["Enums"]["auction_status"]
+          updated_at: string
+          winner_contact: string | null
+          winner_name: string | null
+          winner_ntn: string | null
+          winning_bid: number | null
+        }
+        Insert: {
+          auction_number: string
+          auction_type: Database["public"]["Enums"]["auction_type"]
+          auctioneer_license?: string | null
+          auctioneer_name?: string | null
+          consignment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_bid?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          reserve_price: number
+          scheduled_date: string
+          started_at?: string | null
+          starting_bid?: number | null
+          status?: Database["public"]["Enums"]["auction_status"]
+          updated_at?: string
+          winner_contact?: string | null
+          winner_name?: string | null
+          winner_ntn?: string | null
+          winning_bid?: number | null
+        }
+        Update: {
+          auction_number?: string
+          auction_type?: Database["public"]["Enums"]["auction_type"]
+          auctioneer_license?: string | null
+          auctioneer_name?: string | null
+          consignment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_bid?: number | null
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          reserve_price?: number
+          scheduled_date?: string
+          started_at?: string | null
+          starting_bid?: number | null
+          status?: Database["public"]["Enums"]["auction_status"]
+          updated_at?: string
+          winner_contact?: string | null
+          winner_name?: string | null
+          winner_ntn?: string | null
+          winning_bid?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_consignment_id_fkey"
+            columns: ["consignment_id"]
+            isOneToOne: false
+            referencedRelation: "consignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          due_date: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          is_resolved: boolean | null
+          message: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          due_date?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          due_date?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      consignments: {
+        Row: {
+          additional_duty_amount: number | null
+          arrival_date: string | null
+          bank_guarantee_amount: number | null
+          bond_expiry_date: string | null
+          bond_start_date: string | null
+          carnet_number: string | null
+          cleared_at: string | null
+          cleared_by: string | null
+          consignment_type: Database["public"]["Enums"]["consignment_type"]
+          country_of_origin: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          customs_duty_amount: number | null
+          customs_duty_rate: number | null
+          declared_value: number
+          goods_description: string
+          hs_code_id: string | null
+          id: string
+          import_license_number: string | null
+          importer_exporter_name: string
+          importer_exporter_ntn: string | null
+          is_life_saving_drug: boolean | null
+          is_perishable: boolean | null
+          notes: string | null
+          port_of_destination: string | null
+          port_of_origin: string | null
+          quantity: number
+          quantity_unit: string | null
+          regulatory_duty_amount: number | null
+          requires_urgent_release: boolean | null
+          sales_tax_amount: number | null
+          sales_tax_rate: number | null
+          status: Database["public"]["Enums"]["consignment_status"]
+          total_duty_amount: number | null
+          tracking_number: string
+          updated_at: string
+          vehicle_registration: string | null
+          vessel_flight_number: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          additional_duty_amount?: number | null
+          arrival_date?: string | null
+          bank_guarantee_amount?: number | null
+          bond_expiry_date?: string | null
+          bond_start_date?: string | null
+          carnet_number?: string | null
+          cleared_at?: string | null
+          cleared_by?: string | null
+          consignment_type: Database["public"]["Enums"]["consignment_type"]
+          country_of_origin?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customs_duty_amount?: number | null
+          customs_duty_rate?: number | null
+          declared_value: number
+          goods_description: string
+          hs_code_id?: string | null
+          id?: string
+          import_license_number?: string | null
+          importer_exporter_name: string
+          importer_exporter_ntn?: string | null
+          is_life_saving_drug?: boolean | null
+          is_perishable?: boolean | null
+          notes?: string | null
+          port_of_destination?: string | null
+          port_of_origin?: string | null
+          quantity: number
+          quantity_unit?: string | null
+          regulatory_duty_amount?: number | null
+          requires_urgent_release?: boolean | null
+          sales_tax_amount?: number | null
+          sales_tax_rate?: number | null
+          status?: Database["public"]["Enums"]["consignment_status"]
+          total_duty_amount?: number | null
+          tracking_number: string
+          updated_at?: string
+          vehicle_registration?: string | null
+          vessel_flight_number?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          additional_duty_amount?: number | null
+          arrival_date?: string | null
+          bank_guarantee_amount?: number | null
+          bond_expiry_date?: string | null
+          bond_start_date?: string | null
+          carnet_number?: string | null
+          cleared_at?: string | null
+          cleared_by?: string | null
+          consignment_type?: Database["public"]["Enums"]["consignment_type"]
+          country_of_origin?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          customs_duty_amount?: number | null
+          customs_duty_rate?: number | null
+          declared_value?: number
+          goods_description?: string
+          hs_code_id?: string | null
+          id?: string
+          import_license_number?: string | null
+          importer_exporter_name?: string
+          importer_exporter_ntn?: string | null
+          is_life_saving_drug?: boolean | null
+          is_perishable?: boolean | null
+          notes?: string | null
+          port_of_destination?: string | null
+          port_of_origin?: string | null
+          quantity?: number
+          quantity_unit?: string | null
+          regulatory_duty_amount?: number | null
+          requires_urgent_release?: boolean | null
+          sales_tax_amount?: number | null
+          sales_tax_rate?: number | null
+          status?: Database["public"]["Enums"]["consignment_status"]
+          total_duty_amount?: number | null
+          tracking_number?: string
+          updated_at?: string
+          vehicle_registration?: string | null
+          vessel_flight_number?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignments_hs_code_id_fkey"
+            columns: ["hs_code_id"]
+            isOneToOne: false
+            referencedRelation: "hs_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -78,6 +391,59 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customs_documents: {
+        Row: {
+          consignment_id: string | null
+          created_at: string
+          document_number: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          is_verified: boolean | null
+          issue_date: string | null
+          notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          consignment_id?: string | null
+          created_at?: string
+          document_number: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_verified?: boolean | null
+          issue_date?: string | null
+          notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          consignment_id?: string | null
+          created_at?: string
+          document_number?: string
+          document_type?: Database["public"]["Enums"]["document_type"]
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_verified?: boolean | null
+          issue_date?: string | null
+          notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customs_documents_consignment_id_fkey"
+            columns: ["consignment_id"]
+            isOneToOne: false
+            referencedRelation: "consignments"
             referencedColumns: ["id"]
           },
         ]
@@ -156,6 +522,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hs_codes: {
+        Row: {
+          additional_duty_rate: number | null
+          chapter: string
+          code: string
+          created_at: string
+          description: string
+          duty_rate: number
+          id: string
+          is_restricted: boolean | null
+          notes: string | null
+          regulatory_duty_rate: number | null
+          requires_license: boolean | null
+          sales_tax_rate: number
+          updated_at: string
+        }
+        Insert: {
+          additional_duty_rate?: number | null
+          chapter: string
+          code: string
+          created_at?: string
+          description: string
+          duty_rate?: number
+          id?: string
+          is_restricted?: boolean | null
+          notes?: string | null
+          regulatory_duty_rate?: number | null
+          requires_license?: boolean | null
+          sales_tax_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          additional_duty_rate?: number | null
+          chapter?: string
+          code?: string
+          created_at?: string
+          description?: string
+          duty_rate?: number
+          id?: string
+          is_restricted?: boolean | null
+          notes?: string | null
+          regulatory_duty_rate?: number | null
+          requires_license?: boolean | null
+          sales_tax_rate?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       order_status_history: {
         Row: {
@@ -625,6 +1039,90 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouses: {
+        Row: {
+          address: string
+          bank_guarantee_amount: number | null
+          bank_guarantee_expiry: string | null
+          capacity_sqft: number | null
+          capacity_weight_kg: number | null
+          city: string
+          code: string
+          created_at: string
+          fire_safety_certificate: string | null
+          fire_safety_expiry: string | null
+          id: string
+          is_active: boolean | null
+          license_expiry_date: string | null
+          license_issue_date: string | null
+          license_number: string | null
+          license_status: Database["public"]["Enums"]["warehouse_license_status"]
+          name: string
+          notes: string | null
+          operator_profile_id: string | null
+          owner_contact: string | null
+          owner_name: string | null
+          postal_code: string | null
+          site_plan_url: string | null
+          updated_at: string
+          warehouse_type: Database["public"]["Enums"]["warehouse_type"]
+        }
+        Insert: {
+          address: string
+          bank_guarantee_amount?: number | null
+          bank_guarantee_expiry?: string | null
+          capacity_sqft?: number | null
+          capacity_weight_kg?: number | null
+          city: string
+          code: string
+          created_at?: string
+          fire_safety_certificate?: string | null
+          fire_safety_expiry?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_expiry_date?: string | null
+          license_issue_date?: string | null
+          license_number?: string | null
+          license_status?: Database["public"]["Enums"]["warehouse_license_status"]
+          name: string
+          notes?: string | null
+          operator_profile_id?: string | null
+          owner_contact?: string | null
+          owner_name?: string | null
+          postal_code?: string | null
+          site_plan_url?: string | null
+          updated_at?: string
+          warehouse_type: Database["public"]["Enums"]["warehouse_type"]
+        }
+        Update: {
+          address?: string
+          bank_guarantee_amount?: number | null
+          bank_guarantee_expiry?: string | null
+          capacity_sqft?: number | null
+          capacity_weight_kg?: number | null
+          city?: string
+          code?: string
+          created_at?: string
+          fire_safety_certificate?: string | null
+          fire_safety_expiry?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_expiry_date?: string | null
+          license_issue_date?: string | null
+          license_number?: string | null
+          license_status?: Database["public"]["Enums"]["warehouse_license_status"]
+          name?: string
+          notes?: string | null
+          operator_profile_id?: string | null
+          owner_contact?: string | null
+          owner_name?: string | null
+          postal_code?: string | null
+          site_plan_url?: string | null
+          updated_at?: string
+          warehouse_type?: Database["public"]["Enums"]["warehouse_type"]
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           attempt_number: number | null
@@ -741,6 +1239,25 @@ export type Database = {
         | "fleet_manager"
         | "driver"
         | "customer"
+      auction_status: "scheduled" | "active" | "completed" | "cancelled"
+      auction_type: "public" | "private"
+      consignment_status:
+        | "pending"
+        | "cleared"
+        | "held"
+        | "released"
+        | "bonded"
+        | "auctioned"
+      consignment_type: "import" | "export" | "transit" | "temporary_import"
+      document_type:
+        | "igm"
+        | "egm"
+        | "bill_of_lading"
+        | "commercial_invoice"
+        | "packing_list"
+        | "certificate_of_origin"
+        | "customs_declaration"
+        | "carnet_de_passage"
       driver_status: "pending" | "active" | "suspended" | "inactive"
       order_status:
         | "pending"
@@ -758,6 +1275,13 @@ export type Database = {
         | "rescheduled"
       service_type: "express" | "same_day" | "standard" | "economy"
       vehicle_status: "active" | "idle" | "maintenance" | "offline"
+      warehouse_license_status:
+        | "active"
+        | "pending"
+        | "suspended"
+        | "expired"
+        | "cancelled"
+      warehouse_type: "private_bonded" | "public_bonded" | "manufacturing_bond"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -893,6 +1417,27 @@ export const Constants = {
         "driver",
         "customer",
       ],
+      auction_status: ["scheduled", "active", "completed", "cancelled"],
+      auction_type: ["public", "private"],
+      consignment_status: [
+        "pending",
+        "cleared",
+        "held",
+        "released",
+        "bonded",
+        "auctioned",
+      ],
+      consignment_type: ["import", "export", "transit", "temporary_import"],
+      document_type: [
+        "igm",
+        "egm",
+        "bill_of_lading",
+        "commercial_invoice",
+        "packing_list",
+        "certificate_of_origin",
+        "customs_declaration",
+        "carnet_de_passage",
+      ],
       driver_status: ["pending", "active", "suspended", "inactive"],
       order_status: [
         "pending",
@@ -911,6 +1456,14 @@ export const Constants = {
       ],
       service_type: ["express", "same_day", "standard", "economy"],
       vehicle_status: ["active", "idle", "maintenance", "offline"],
+      warehouse_license_status: [
+        "active",
+        "pending",
+        "suspended",
+        "expired",
+        "cancelled",
+      ],
+      warehouse_type: ["private_bonded", "public_bonded", "manufacturing_bond"],
     },
   },
 } as const
