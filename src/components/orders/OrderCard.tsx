@@ -40,9 +40,10 @@ const statusConfig = {
 interface OrderCardProps {
   order: Order;
   index: number;
+  onViewDetails?: () => void;
 }
 
-export function OrderCard({ order, index }: OrderCardProps) {
+export function OrderCard({ order, index, onViewDetails }: OrderCardProps) {
   const config = statusConfig[order.status];
 
   return (
@@ -119,7 +120,7 @@ export function OrderCard({ order, index }: OrderCardProps) {
               </div>
             )}
           </div>
-          <Button variant="ghost" size="sm" className="gap-1 text-primary">
+          <Button variant="ghost" size="sm" className="gap-1 text-primary" onClick={onViewDetails}>
             Details <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </div>
