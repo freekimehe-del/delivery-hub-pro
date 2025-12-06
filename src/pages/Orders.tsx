@@ -12,16 +12,36 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { AllOrdersTab } from "@/components/orders/AllOrdersTab";
 import { DispatchTab } from "@/components/orders/DispatchTab";
 import { RoutesTab } from "@/components/orders/RoutesTab";
 import { ProofOfDeliveryTab } from "@/components/orders/ProofOfDeliveryTab";
+import { WorkflowPipeline } from "@/components/orders/WorkflowPipeline";
+import { ExceptionPanel } from "@/components/orders/ExceptionPanel";
 import { useOrderStats } from "@/hooks/useOrders";
+import { WorkflowStage } from "@/hooks/useWorkflow";
+
+const stageToTab: Record<WorkflowStage, string> = {
+  all_orders: "all",
+  dispatch: "dispatch",
+  routes: "routes",
+  pod: "pod",
+};
+
+const tabToStage: Record<string, WorkflowStage> = {
+  all: "all_orders",
+  dispatch: "dispatch",
+  routes: "routes",
+  pod: "pod",
+};
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState("all");
   const { data: stats } = useOrderStats();
+
+  const handleStageClick = (stage: WorkflowStage) => {
+    setActiveTab(stageToTab[stage]);
+  };
 
   const metrics = [
     {
@@ -61,11 +81,22 @@ export default function Orders() {
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Orders Management</h1>
         <p className="text-muted-foreground mt-1">
           End-to-end order lifecycle from creation to proof of delivery.
         </p>
+      </div>
+
+      {/* Workflow Pipeline */}
+      <WorkflowPipeline
+        activeStage={tabToStage[activeTab]}
+        onStageClick={handleStageClick}
+      />
+
+      {/* Exception Panel */}
+      <div className="mb-6">
+        <ExceptionPanel />
       </div>
 
       {/* Metrics Grid */}

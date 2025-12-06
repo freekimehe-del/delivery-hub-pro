@@ -5,21 +5,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Package,
-  MapPin,
   User,
   Truck,
   Clock,
   Phone,
   FileSignature,
   CheckCircle,
-  ArrowRight,
   Calendar,
 } from "lucide-react";
-import { useOrder, useUpdateOrderStatus, OrderStatus } from "@/hooks/useOrders";
+import { useOrder } from "@/hooks/useOrders";
+import { WorkflowActions } from "./WorkflowActions";
 import { format } from "date-fns";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -38,19 +36,6 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   rescheduled: { label: "Rescheduled", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
 };
 
-const statusFlow: OrderStatus[] = [
-  "pending",
-  "confirmed",
-  "dispatched",
-  "driver_accepted",
-  "en_route_pickup",
-  "arrived_pickup",
-  "picked_up",
-  "en_route_delivery",
-  "arrived_delivery",
-  "delivered",
-];
-
 interface OrderDetailsSheetProps {
   orderId: string | null;
   open: boolean;
@@ -59,21 +44,6 @@ interface OrderDetailsSheetProps {
 
 export function OrderDetailsSheet({ orderId, open, onOpenChange }: OrderDetailsSheetProps) {
   const { data: order, isLoading } = useOrder(orderId);
-  const updateStatus = useUpdateOrderStatus();
-
-  const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
-    const currentIndex = statusFlow.indexOf(currentStatus);
-    if (currentIndex === -1 || currentIndex === statusFlow.length - 1) return null;
-    return statusFlow[currentIndex + 1];
-  };
-
-  const handleNextStatus = () => {
-    if (!order) return;
-    const nextStatus = getNextStatus(order.status);
-    if (nextStatus) {
-      updateStatus.mutate({ orderId: order.id, status: nextStatus });
-    }
-  };
 
   if (!order && !isLoading) return null;
 
@@ -94,7 +64,7 @@ export function OrderDetailsSheet({ orderId, open, onOpenChange }: OrderDetailsS
         ) : order ? (
           <div className="mt-6 space-y-6">
             {/* Header */}
-            <div className="flex items-start justify-between">
+            <div className="space-y-3">
               <div>
                 <span className="font-mono text-lg font-bold">
                   {order.tracking_number}
@@ -106,16 +76,11 @@ export function OrderDetailsSheet({ orderId, open, onOpenChange }: OrderDetailsS
                   <Badge variant="outline">{order.service_type}</Badge>
                 </div>
               </div>
-              {getNextStatus(order.status) && (
-                <Button
-                  size="sm"
-                  onClick={handleNextStatus}
-                  disabled={updateStatus.isPending}
-                >
-                  <ArrowRight className="w-4 h-4 mr-1" />
-                  Next Status
-                </Button>
-              )}
+              
+              {/* Workflow Actions */}
+              <div className="p-3 bg-muted/30 rounded-lg border border-border">
+                <WorkflowActions order={order} />
+              </div>
             </div>
 
             {/* Customer & Driver */}
