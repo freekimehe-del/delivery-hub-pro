@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FleetDashboard } from "@/components/fleet/FleetDashboard";
 import { VehicleTable } from "@/components/fleet/VehicleTable";
+import { DriverTable } from "@/components/fleet/DriverTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Fleet() {
@@ -72,9 +73,7 @@ export default function Fleet() {
         </TabsContent>
 
         <TabsContent value="drivers">
-          <div className="bg-card rounded-xl border border-border p-8 text-center">
-            <p className="text-muted-foreground">Driver management coming soon...</p>
-          </div>
+          <DriverTable />
         </TabsContent>
 
         <TabsContent value="maintenance">
