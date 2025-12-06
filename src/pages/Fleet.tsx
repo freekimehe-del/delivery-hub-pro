@@ -5,6 +5,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FleetDashboard } from "@/components/fleet/FleetDashboard";
 import { VehicleTable } from "@/components/fleet/VehicleTable";
 import { DriverTable } from "@/components/fleet/DriverTable";
+import { MaintenanceTable } from "@/components/fleet/MaintenanceTable";
+import { FuelTable } from "@/components/fleet/FuelTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Fleet() {
@@ -77,15 +79,11 @@ export default function Fleet() {
         </TabsContent>
 
         <TabsContent value="maintenance">
-          <div className="bg-card rounded-xl border border-border p-8 text-center">
-            <p className="text-muted-foreground">Maintenance scheduling coming soon...</p>
-          </div>
+          <MaintenanceTable />
         </TabsContent>
 
         <TabsContent value="fuel">
-          <div className="bg-card rounded-xl border border-border p-8 text-center">
-            <p className="text-muted-foreground">Fuel management coming soon...</p>
-          </div>
+          <FuelTable />
         </TabsContent>
       </Tabs>
     </DashboardLayout>

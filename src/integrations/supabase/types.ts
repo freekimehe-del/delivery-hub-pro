@@ -523,6 +523,96 @@ export type Database = {
           },
         ]
       }
+      fuel_records: {
+        Row: {
+          anomaly_flag: boolean | null
+          anomaly_reason: string | null
+          created_at: string
+          driver_id: string | null
+          fuel_card_used: boolean | null
+          fuel_type: string
+          fueled_at: string
+          full_tank: boolean | null
+          id: string
+          miles_driven: number | null
+          mpg: number | null
+          notes: string | null
+          odometer_reading: number
+          previous_odometer: number | null
+          price_per_gallon: number
+          quantity_gallons: number
+          receipt_url: string | null
+          station_location: string | null
+          station_name: string | null
+          total_cost: number | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          anomaly_flag?: boolean | null
+          anomaly_reason?: string | null
+          created_at?: string
+          driver_id?: string | null
+          fuel_card_used?: boolean | null
+          fuel_type?: string
+          fueled_at?: string
+          full_tank?: boolean | null
+          id?: string
+          miles_driven?: number | null
+          mpg?: number | null
+          notes?: string | null
+          odometer_reading: number
+          previous_odometer?: number | null
+          price_per_gallon: number
+          quantity_gallons: number
+          receipt_url?: string | null
+          station_location?: string | null
+          station_name?: string | null
+          total_cost?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          anomaly_flag?: boolean | null
+          anomaly_reason?: string | null
+          created_at?: string
+          driver_id?: string | null
+          fuel_card_used?: boolean | null
+          fuel_type?: string
+          fueled_at?: string
+          full_tank?: boolean | null
+          id?: string
+          miles_driven?: number | null
+          mpg?: number | null
+          notes?: string | null
+          odometer_reading?: number
+          previous_odometer?: number | null
+          price_per_gallon?: number
+          quantity_gallons?: number
+          receipt_url?: string | null
+          station_location?: string | null
+          station_name?: string | null
+          total_cost?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_records_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hs_codes: {
         Row: {
           additional_duty_rate: number | null
@@ -570,6 +660,99 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      maintenance_records: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          labor_cost: number | null
+          maintenance_type: string
+          notes: string | null
+          odometer_at_service: number | null
+          parts_cost: number | null
+          parts_used: Json | null
+          priority: string
+          reported_by_driver_id: string | null
+          scheduled_date: string | null
+          started_at: string | null
+          status: string
+          technician_name: string | null
+          title: string
+          total_cost: number | null
+          triggered_by: string | null
+          updated_at: string
+          vehicle_id: string | null
+          vendor_name: string | null
+          work_performed: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_cost?: number | null
+          maintenance_type: string
+          notes?: string | null
+          odometer_at_service?: number | null
+          parts_cost?: number | null
+          parts_used?: Json | null
+          priority?: string
+          reported_by_driver_id?: string | null
+          scheduled_date?: string | null
+          started_at?: string | null
+          status?: string
+          technician_name?: string | null
+          title: string
+          total_cost?: number | null
+          triggered_by?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vendor_name?: string | null
+          work_performed?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_cost?: number | null
+          maintenance_type?: string
+          notes?: string | null
+          odometer_at_service?: number | null
+          parts_cost?: number | null
+          parts_used?: Json | null
+          priority?: string
+          reported_by_driver_id?: string | null
+          scheduled_date?: string | null
+          started_at?: string | null
+          status?: string
+          technician_name?: string | null
+          title?: string
+          total_cost?: number | null
+          triggered_by?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vendor_name?: string | null
+          work_performed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_reported_by_driver_id_fkey"
+            columns: ["reported_by_driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_status_history: {
         Row: {
