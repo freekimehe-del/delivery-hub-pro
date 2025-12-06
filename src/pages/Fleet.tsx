@@ -1,45 +1,14 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Car, Users, Wrench, Fuel, TrendingUp, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { MetricCard } from "@/components/dashboard/MetricCard";
+import { FleetDashboard } from "@/components/fleet/FleetDashboard";
 import { VehicleTable } from "@/components/fleet/VehicleTable";
-
-const metrics = [
-  {
-    title: "Total Vehicles",
-    value: "42",
-    change: 5,
-    changeLabel: "this month",
-    icon: <Car className="w-5 h-5" />,
-    iconColor: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Active Drivers",
-    value: "38",
-    change: 3,
-    changeLabel: "this week",
-    icon: <Users className="w-5 h-5" />,
-    iconColor: "bg-fleet-green/10 text-fleet-green",
-  },
-  {
-    title: "Due Maintenance",
-    value: "4",
-    change: -2,
-    changeLabel: "vs last week",
-    icon: <Wrench className="w-5 h-5" />,
-    iconColor: "bg-fleet-orange/10 text-fleet-orange",
-  },
-  {
-    title: "Avg. Fuel Cost",
-    value: "$3.45/mi",
-    change: -8,
-    changeLabel: "this month",
-    icon: <Fuel className="w-5 h-5" />,
-    iconColor: "bg-fleet-purple/10 text-fleet-purple",
-  },
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Fleet() {
+  const [activeTab, setActiveTab] = useState("overview");
+
   return (
     <DashboardLayout>
       {/* Page Header */}
@@ -50,39 +19,76 @@ export default function Fleet() {
         </p>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {metrics.map((metric, index) => (
-          <MetricCard key={metric.title} {...metric} delay={index * 0.1} />
-        ))}
-      </div>
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-background">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="vehicles" className="data-[state=active]:bg-background">
+            Vehicles
+          </TabsTrigger>
+          <TabsTrigger value="drivers" className="data-[state=active]:bg-background">
+            Drivers
+          </TabsTrigger>
+          <TabsTrigger value="maintenance" className="data-[state=active]:bg-background">
+            Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="fuel" className="data-[state=active]:bg-background">
+            Fuel
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Alerts Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-        className="mb-6"
-      >
-        <div className="bg-fleet-orange/5 border border-fleet-orange/20 rounded-xl p-4 flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-fleet-orange/10 shrink-0">
-            <AlertTriangle className="w-5 h-5 text-fleet-orange" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-medium text-fleet-orange">Maintenance Alerts</h4>
-            <p className="text-sm text-muted-foreground mt-1">
-              4 vehicles require maintenance attention. Truck-007 is due for oil change,
-              Van-003 needs tire replacement.
-            </p>
-          </div>
-          <button className="text-sm font-medium text-fleet-orange hover:underline whitespace-nowrap">
-            View All
-          </button>
-        </div>
-      </motion.div>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Fleet Dashboard */}
+          <FleetDashboard />
 
-      {/* Vehicle Table */}
-      <VehicleTable />
+          {/* Alerts Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
+            <div className="bg-fleet-orange/5 border border-fleet-orange/20 rounded-xl p-4 flex items-start gap-4">
+              <div className="p-2 rounded-lg bg-fleet-orange/10 shrink-0">
+                <AlertTriangle className="w-5 h-5 text-fleet-orange" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-fleet-orange">Maintenance Alerts</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  4 vehicles require maintenance attention. Truck-007 is due for oil change,
+                  Van-003 needs tire replacement.
+                </p>
+              </div>
+              <button className="text-sm font-medium text-fleet-orange hover:underline whitespace-nowrap">
+                View All
+              </button>
+            </div>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="vehicles">
+          <VehicleTable />
+        </TabsContent>
+
+        <TabsContent value="drivers">
+          <div className="bg-card rounded-xl border border-border p-8 text-center">
+            <p className="text-muted-foreground">Driver management coming soon...</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="maintenance">
+          <div className="bg-card rounded-xl border border-border p-8 text-center">
+            <p className="text-muted-foreground">Maintenance scheduling coming soon...</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fuel">
+          <div className="bg-card rounded-xl border border-border p-8 text-center">
+            <p className="text-muted-foreground">Fuel management coming soon...</p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 }
