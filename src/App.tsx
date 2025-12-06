@@ -10,6 +10,7 @@ import Customers from "./pages/Customers";
 import Analytics from "./pages/Analytics";
 import ApiDocs from "./pages/ApiDocs";
 import Settings from "./pages/Settings";
+import Customs from "./pages/Customs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,11 @@ const App = () => (
           <Route path="/customers/billing" element={<Customers />} />
           <Route path="/customers/invoices" element={<Customers />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/customs" element={<Customs />} />
+          <Route path="/customs/consignments" element={<Customs />} />
+          <Route path="/customs/warehouses" element={<Customs />} />
+          <Route path="/customs/hs-codes" element={<Customs />} />
+          <Route path="/customs/auctions" element={<Customs />} />
           <Route path="/api" element={<ApiDocs />} />
           <Route path="/api/docs" element={<ApiDocs />} />
           <Route path="/api/keys" element={<ApiDocs />} />
