@@ -3,7 +3,7 @@ let hasTesseract = false;
 let createWorker = null;
 
 try {
-  // eslint-disable-next-line global-require
+   
   const tesseract = require('tesseract.js');
   createWorker = tesseract.createWorker;
   hasTesseract = true;

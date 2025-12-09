@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 
 const routeSchema = z.object({
-  name: z.string().min(1, "Route name is required"),
+  route_number: z.string().min(1, "Route name is required"),
   origin_country: z.string().min(1, "Origin country is required"),
   origin_city: z.string().min(1, "Origin city is required"),
   destination_country: z.string().min(1, "Destination country is required"),
@@ -65,7 +65,7 @@ export function AddRouteDialog({
   const form = useForm<RouteFormData>({
     resolver: zodResolver(routeSchema),
     defaultValues: {
-      name: route?.name || "",
+      route_number: route?.route_number || "",
       origin_country: route?.origin_country || "",
       origin_city: route?.origin_city || "",
       destination_country: route?.destination_country || "",
@@ -146,7 +146,7 @@ export function AddRouteDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="route_number"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Route Name *</FormLabel>

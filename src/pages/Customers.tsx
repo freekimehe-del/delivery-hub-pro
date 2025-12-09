@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -15,40 +16,12 @@ import { AllCustomersTab } from "@/components/customers/AllCustomersTab";
 import { BillingTab } from "@/components/customers/BillingTab";
 import { InvoicesTab } from "@/components/customers/InvoicesTab";
 
-const metrics = [
-  {
-    title: "Total Customers",
-    value: "248",
-    change: 12,
-    changeLabel: "this month",
-    icon: <Users className="w-5 h-5" />,
-    iconColor: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Active Accounts",
-    value: "195",
-    change: 8,
-    changeLabel: "this month",
-    icon: <Building2 className="w-5 h-5" />,
-    iconColor: "bg-fleet-green/10 text-fleet-green",
-  },
-  {
-    title: "Total Revenue",
-    value: "PKR 284K",
-    change: 23,
-    changeLabel: "this month",
-    icon: <DollarSign className="w-5 h-5" />,
-    iconColor: "bg-fleet-purple/10 text-fleet-purple",
-  },
-  {
-    title: "Avg. Order Value",
-    value: "PKR 156",
-    change: 5,
-    changeLabel: "vs last month",
-    icon: <TrendingUp className="w-5 h-5" />,
-    iconColor: "bg-fleet-orange/10 text-fleet-orange",
-  },
-];
+interface CustomerMetrics {
+  total_count?: number;
+  active_count?: number;
+  total_revenue?: number;
+  avg_order_value?: number;
+}
 
 const tabs = [
   { value: "customers", label: "All Customers", path: "/customers", icon: Users },
@@ -56,9 +29,64 @@ const tabs = [
   { value: "invoices", label: "Invoices", path: "/customers/invoices", icon: FileText },
 ];
 
-export default function Customers() {
+// Hook must be inside component, refactoring structure slightly
+const Customers = () => {
+  const [metricsData, setMetricsData] = useState<CustomerMetrics | null>(null);
+
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function load() {
+      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+      try {
+        const resp = await fetch(`${apiUrl}/api/customers`);
+        if (resp.ok) {
+          const json = await resp.json();
+          setMetricsData(json.stats);
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+    load();
+  }, []);
+
+  const metrics = [
+    {
+      title: "Total Customers",
+      value: String(metricsData?.total_count || 0),
+      change: 0,
+      changeLabel: "this month",
+      icon: <Users className="w-5 h-5" />,
+      iconColor: "bg-primary/10 text-primary",
+    },
+    {
+      title: "Active Accounts",
+      value: String(metricsData?.active_count || 0),
+      change: 0,
+      changeLabel: "this month",
+      icon: <Building2 className="w-5 h-5" />,
+      iconColor: "bg-fleet-green/10 text-fleet-green",
+    },
+    {
+      title: "Total Revenue",
+      value: `PKR ${metricsData?.total_revenue?.toLocaleString() || '0'}`,
+      change: 0,
+      changeLabel: "this month",
+      icon: <DollarSign className="w-5 h-5" />,
+      iconColor: "bg-fleet-purple/10 text-fleet-purple",
+    },
+    {
+      title: "Avg. Order Value",
+      value: `PKR ${metricsData?.avg_order_value?.toLocaleString() || '0'}`,
+      change: 0,
+      changeLabel: "vs last month",
+      icon: <TrendingUp className="w-5 h-5" />,
+      iconColor: "bg-fleet-orange/10 text-fleet-orange",
+    },
+  ];
+
 
   const getCurrentTab = () => {
     if (location.pathname === "/customers/billing") return "billing";
@@ -121,4 +149,6 @@ export default function Customers() {
       {currentTab === "invoices" && <InvoicesTab />}
     </DashboardLayout>
   );
-}
+};
+
+export default Customers;

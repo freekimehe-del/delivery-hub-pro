@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConsignmentsTab } from "@/components/customs/ConsignmentsTab";
+import { CustomsDashboard } from "@/components/customs/CustomsDashboard";
 import { WarehousesTab } from "@/components/customs/WarehousesTab";
 import { HSCodesTab } from "@/components/customs/HSCodesTab";
 import { AuctionsTab } from "@/components/customs/AuctionsTab";
@@ -9,7 +10,7 @@ import { ComplianceAlertsPanel } from "@/components/customs/ComplianceAlertsPane
 import { FileText, Warehouse, Package, Gavel, AlertTriangle } from "lucide-react";
 
 const Customs = () => {
-  const [activeTab, setActiveTab] = useState("consignments");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
     <DashboardLayout>
@@ -29,6 +30,10 @@ const Customs = () => {
                   <Package className="h-4 w-4" />
                   <span className="hidden sm:inline">Consignments</span>
                 </TabsTrigger>
+                <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Declarations</span>
+                </TabsTrigger>
                 <TabsTrigger value="warehouses" className="flex items-center gap-2">
                   <Warehouse className="h-4 w-4" />
                   <span className="hidden sm:inline">Warehouses</span>
@@ -45,6 +50,10 @@ const Customs = () => {
 
               <TabsContent value="consignments">
                 <ConsignmentsTab />
+              </TabsContent>
+
+              <TabsContent value="dashboard">
+                <CustomsDashboard />
               </TabsContent>
 
               <TabsContent value="warehouses">

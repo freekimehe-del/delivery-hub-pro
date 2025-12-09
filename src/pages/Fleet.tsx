@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -9,8 +9,34 @@ import { MaintenanceTable } from "@/components/fleet/MaintenanceTable";
 import { FuelTable } from "@/components/fleet/FuelTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface FleetStats {
+  total_vehicles?: number;
+  available_vehicles?: number;
+  maintenance?: number;
+  stats?: {
+    total?: number;
+  };
+}
+
 export default function Fleet() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [stats, setStats] = useState<FleetStats | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+      try {
+        const resp = await fetch(`${apiUrl}/api/fleet/stats`);
+        if (resp.ok) {
+          const json = await resp.json();
+          setStats(json.stats);
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+    load();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -43,7 +69,33 @@ export default function Fleet() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Fleet Dashboard */}
+          {/* Fleet Dashboard - passing props if FleetDashboard accepts them, 
+              otherwise assuming it might be a mock, but we can pass data down if we refactor FleetDashboard.
+              For now, let's assume FleetDashboard is self-contained or we replace it with metrics cards here. 
+              Actually, let's inject a new metrics overview above the original dashboard or replace it.
+          */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+              <h3 className="text-sm font-medium text-gray-500">Total Vehicles</h3>
+              <p className="text-2xl font-bold">{stats?.total_vehicles || 0}</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+              <h3 className="text-sm font-medium text-gray-500">Available</h3>
+              <div className="flex items-center mt-1">
+                <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                <p className="text-2xl font-bold">{stats?.available_vehicles || 0}</p>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+              <h3 className="text-sm font-medium text-gray-500">In Maintenance</h3>
+              <div className="flex items-center mt-1">
+                <span className="h-2 w-2 rounded-full bg-red-500 mr-2"></span>
+                <p className="text-2xl font-bold">{stats?.maintenance || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Fleet Dashboard (Original) */}
           <FleetDashboard />
 
           {/* Alerts Section */}

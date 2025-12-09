@@ -39,7 +39,7 @@ const CreateShipment: React.FC = () => {
 
     try {
       // Try to persist via API. If API fails, fallback to localStorage
-        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4002';
+      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
       const body = { shipment_ref: `SHP-${Date.now()}`, type: form.type, mode: form.type, origin: form.origin, destination: form.destination, value: form.value };
       let record: any = null;
       try {
@@ -70,7 +70,7 @@ const CreateShipment: React.FC = () => {
       // If a document was selected, upload and attach metadata
       if (file) {
         try {
-            const apiUploadUrl = (window as any).__API_BASE__ || 'http://localhost:4002';
+          const apiUploadUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
           const formData = new FormData();
           formData.append('file', file as any, file.name);
           formData.append('shipment_id', record.id || record.shipment_ref || 'unlinked');

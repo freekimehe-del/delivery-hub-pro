@@ -9,6 +9,7 @@ import {
   Route,
   FileSignature,
 } from "lucide-react";
+import { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +21,13 @@ import { WorkflowPipeline } from "@/components/orders/WorkflowPipeline";
 import { ExceptionPanel } from "@/components/orders/ExceptionPanel";
 import { useOrderStats } from "@/hooks/useOrders";
 import { WorkflowStage } from "@/hooks/useWorkflow";
+
+interface OrderMetrics {
+  pending?: number;
+  dispatched?: number;
+  in_transit?: number;
+  delivered?: number;
+}
 
 const stageToTab: Record<WorkflowStage, string> = {
   all_orders: "all",
@@ -37,7 +45,23 @@ const tabToStage: Record<string, WorkflowStage> = {
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState("all");
-  const { data: stats } = useOrderStats();
+  const [metricsData, setMetricsData] = useState<OrderMetrics | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+      try {
+        const resp = await fetch(`${apiUrl}/api/orders`);
+        if (resp.ok) {
+          const json = await resp.json();
+          setMetricsData(json.stats);
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+    load();
+  }, []);
 
   const handleStageClick = (stage: WorkflowStage) => {
     setActiveTab(stageToTab[stage]);
@@ -46,32 +70,32 @@ export default function Orders() {
   const metrics = [
     {
       title: "Pending Orders",
-      value: String(stats?.pending || 0),
-      change: -5,
+      value: String(metricsData?.pending || 0),
+      change: 0,
       changeLabel: "vs yesterday",
       icon: <Clock className="w-5 h-5" />,
       iconColor: "bg-fleet-yellow/10 text-fleet-yellow",
     },
     {
       title: "Dispatched",
-      value: String(stats?.dispatched || 0),
-      change: 18,
+      value: String(metricsData?.dispatched || 0),
+      change: 0,
       changeLabel: "vs yesterday",
       icon: <Send className="w-5 h-5" />,
       iconColor: "bg-primary/10 text-primary",
     },
     {
       title: "In Transit",
-      value: String(stats?.in_transit || 0),
-      change: 12,
+      value: String(metricsData?.in_transit || 0),
+      change: 0,
       changeLabel: "vs yesterday",
       icon: <Truck className="w-5 h-5" />,
       iconColor: "bg-fleet-purple/10 text-fleet-purple",
     },
     {
       title: "Delivered Today",
-      value: String(stats?.delivered || 0),
-      change: 8,
+      value: String(metricsData?.delivered || 0),
+      change: 0,
       changeLabel: "vs yesterday",
       icon: <CheckCircle className="w-5 h-5" />,
       iconColor: "bg-fleet-green/10 text-fleet-green",

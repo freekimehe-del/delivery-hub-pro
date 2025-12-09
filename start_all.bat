@@ -1,0 +1,16 @@
+@echo off
+echo Starting Delivery Hub Pro...
+
+echo Starting Backend Server on Port 4000...
+start "Backend Server" /min cmd /k "cd server && npm start"
+
+echo Waiting for backend...
+timeout /t 5 /nobreak >nul
+
+echo Starting Frontend Client on Port 8083...
+start "Frontend Client" cmd /k "npm run dev"
+
+echo.
+echo Application launching...
+echo If the browser does not open, please visit: http://127.0.0.1:8083
+pause

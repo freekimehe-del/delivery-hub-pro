@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Truck,
@@ -27,6 +26,11 @@ import {
   Warehouse,
   Gavel,
   ScrollText,
+  Search,
+  UserCheck,
+  Box,
+  Container,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -67,7 +71,11 @@ const navItems: NavItem[] = [
     label: "Logistics",
     path: "/logistics",
     children: [
-      { icon: Package, label: "Shipments", path: "/logistics/shipments" },
+      { icon: Box, label: "Shipments", path: "/logistics/shipments" },
+      { icon: FileText, label: "Bills of Lading", path: "/logistics/manifests" },
+      { icon: UserCheck, label: "Proof of Delivery", path: "/logistics/pod" },
+      { icon: Container, label: "Empty Containers", path: "/logistics/containers" },
+      { icon: Zap, label: "AI Optimizer", path: "/logistics/ai-optimizer" },
       { icon: Package, label: "Create Shipment", path: "/logistics/create" },
     ],
   },
@@ -91,6 +99,20 @@ const navItems: NavItem[] = [
       { icon: Warehouse, label: "Warehouses", path: "/customs/warehouses" },
       { icon: ScrollText, label: "HS Codes", path: "/customs/hs-codes" },
       { icon: Gavel, label: "Auctions", path: "/customs/auctions" },
+    ],
+  },
+  {
+    icon: CreditCard,
+    label: "Finance",
+    path: "/finance",
+    children: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/finance/dashboard" },
+      { icon: FileText, label: "Invoices (AR)", path: "/finance/invoices" },
+      { icon: ScrollText, label: "Bills (AP)", path: "/finance/bills" },
+      { icon: Truck, label: "Driver Settlements", path: "/finance/settlements" },
+      { icon: Fuel, label: "Fleet Costs", path: "/finance/fleet-costs" },
+      { icon: BarChart3, label: "Cost Estimator", path: "/finance/cost-estimator" },
+      { icon: FileText, label: "Reports", path: "/finance/reports" },
     ],
   },
   {
@@ -132,11 +154,8 @@ export function Sidebar() {
   };
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: collapsed ? 72 : 260 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col z-50 border-r border-sidebar-border"
+    <aside
+      className={`fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground flex flex-col z-50 border-r border-sidebar-border ${collapsed ? 'w-[72px]' : 'w-[260px]'} transition-all duration-300`}
     >
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
@@ -144,18 +163,11 @@ export function Sidebar() {
           <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center shadow-glow">
             <Truck className="w-5 h-5 text-primary-foreground" />
           </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="font-bold text-lg tracking-tight"
-              >
-                imatech
-              </motion.span>
-            )}
-          </AnimatePresence>
+          {!collapsed && (
+            <span className="font-bold text-lg tracking-tight">
+              imatech
+            </span>
+          )}
         </Link>
       </div>
 
@@ -176,53 +188,38 @@ export function Sidebar() {
                     )}
                   >
                     <item.icon className="w-5 h-5 shrink-0" />
-                    <AnimatePresence>
-                      {!collapsed && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="flex-1 flex items-center justify-between"
-                        >
-                          <span>{item.label}</span>
-                          <ChevronRight
-                            className={cn(
-                              "w-4 h-4 transition-transform duration-200",
-                              expandedItems.includes(item.label) && "rotate-90"
-                            )}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </button>
-                  <AnimatePresence>
-                    {!collapsed && expandedItems.includes(item.label) && (
-                      <motion.ul
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden ml-4 mt-1 space-y-1"
-                      >
-                        {item.children.map((child) => (
-                          <li key={child.path}>
-                            <Link
-                              to={child.path}
-                              className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                                location.pathname === child.path
-                                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                              )}
-                            >
-                              <child.icon className="w-4 h-4" />
-                              <span>{child.label}</span>
-                            </Link>
-                          </li>
-                        ))}
-                      </motion.ul>
+                    {!collapsed && (
+                      <div className="flex-1 flex items-center justify-between">
+                        <span>{item.label}</span>
+                        <ChevronRight
+                          className={cn(
+                            "w-4 h-4 transition-transform duration-200",
+                            expandedItems.includes(item.label) && "rotate-90"
+                          )}
+                        />
+                      </div>
                     )}
-                  </AnimatePresence>
+                  </button>
+                  {!collapsed && expandedItems.includes(item.label) && (
+                    <ul className="ml-4 mt-1 space-y-1">
+                      {item.children.map((child) => (
+                        <li key={child.path}>
+                          <Link
+                            to={child.path}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              location.pathname === child.path
+                                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                            )}
+                          >
+                            <child.icon className="w-4 h-4" />
+                            <span>{child.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ) : (
                 <Link
@@ -235,17 +232,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className="w-5 h-5 shrink-0" />
-                  <AnimatePresence>
-                    {!collapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  {!collapsed && <span>{item.label}</span>}
                 </Link>
               )}
             </li>
@@ -264,6 +251,6 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
         </Button>
       </div>
-    </motion.aside>
+    </aside>
   );
 }
