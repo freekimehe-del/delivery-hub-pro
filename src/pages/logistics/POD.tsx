@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 const POD: React.FC = () => {
     const [manifests, setManifests] = useState<any[]>([]);
@@ -10,13 +11,14 @@ const POD: React.FC = () => {
 
     useEffect(() => {
         async function load() {
-            const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
             try {
-                const resp = await fetch(`${apiUrl}/api/manifests`);
-                if (resp.ok) {
-                    const json = await resp.json();
-                    setManifests(json.manifests || []);
-                }
+                const { data, error } = await supabase
+                    .from('logistics_manifests')
+                    .select('*')
+                    .neq('status', 'completed'); // Only show active manifests
+
+                if (error) throw error;
+                setManifests(data || []);
             } catch (e) {
                 console.error(e);
             }
@@ -31,29 +33,43 @@ const POD: React.FC = () => {
             return;
         }
 
-        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
-        const formData = new FormData();
-        formData.append('manifest_id', selectedManifest);
-        formData.append('signatory', signatory);
-        formData.append('evidence', file);
-        formData.append('location', 'Warehouse A'); // Mock
-
         try {
-            const resp = await fetch(`${apiUrl}/api/pods`, {
-                method: 'POST',
-                body: formData
-            });
-            if (resp.ok) {
-                setStatus("POD Submitted Successfully & Archived.");
-                setFile(null);
-                setSignatory("");
-                setSelectedManifest("");
-            } else {
-                alert("Submission failed");
-            }
-        } catch (e) {
+            // 1. Create POD Record
+            const { error: podError } = await supabase
+                .from('proof_of_delivery')
+                .insert([{
+                    manifest_id: selectedManifest,
+                    signatory_name: signatory,
+                    // photo_evidence_url: we would upload file here and get URL
+                    delivered_at: new Date().toISOString()
+                }]);
+
+            if (podError) throw podError;
+
+            // 2. Update Manifest Status
+            await supabase
+                .from('logistics_manifests')
+                .update({ status: 'completed' })
+                .eq('id', selectedManifest);
+
+            // 3. Update all linked Shipments to Delivered
+            await supabase
+                .from('shipment_master')
+                .update({ status: 'delivered' })
+                .eq('manifest_id', selectedManifest);
+
+            setStatus("POD Submitted Successfully. Manifest Completed.");
+            setFile(null);
+            setSignatory("");
+            setSelectedManifest("");
+
+            // Refresh list
+            const { data } = await supabase.from('logistics_manifests').select('*').neq('status', 'completed');
+            setManifests(data || []);
+
+        } catch (e: any) {
             console.error(e);
-            alert("Error submitting POD");
+            alert("Error submitting POD: " + e.message);
         }
     };
 

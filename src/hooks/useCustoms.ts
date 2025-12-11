@@ -491,3 +491,17 @@ export function useResolveAlert() {
     },
   });
 }
+// Clearance Jobs hooks
+export function useClearanceJobs() {
+  return useQuery({
+    queryKey: ["clearance_jobs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clearance_jobs" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}

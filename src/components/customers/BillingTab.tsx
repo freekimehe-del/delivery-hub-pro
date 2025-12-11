@@ -17,90 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-const billingStats = [
-  {
-    title: "Total Revenue",
-    value: "PKR 284,500",
-    change: 12.5,
-    trend: "up" as const,
-    icon: DollarSign,
-    color: "bg-green-500/10 text-green-600",
-  },
-  {
-    title: "Outstanding",
-    value: "PKR 42,300",
-    change: -8.2,
-    trend: "down" as const,
-    icon: Clock,
-    color: "bg-yellow-500/10 text-yellow-600",
-  },
-  {
-    title: "Paid This Month",
-    value: "PKR 156,200",
-    change: 18.7,
-    trend: "up" as const,
-    icon: CheckCircle,
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Overdue",
-    value: "PKR 12,450",
-    change: 5.3,
-    trend: "up" as const,
-    icon: AlertCircle,
-    color: "bg-red-500/10 text-red-600",
-  },
-];
-
-const recentPayments = [
-  {
-    id: "pay_001",
-    customer: "Acme Corporation",
-    amount: 4580,
-    date: "2024-01-15",
-    status: "completed" as const,
-    method: "Bank Transfer",
-  },
-  {
-    id: "pay_002",
-    customer: "Tech Solutions Inc.",
-    amount: 2340,
-    date: "2024-01-14",
-    status: "completed" as const,
-    method: "Credit Card",
-  },
-  {
-    id: "pay_003",
-    customer: "Global Imports LLC",
-    amount: 7890,
-    date: "2024-01-13",
-    status: "pending" as const,
-    method: "Bank Transfer",
-  },
-  {
-    id: "pay_004",
-    customer: "Quick Retail Co.",
-    amount: 1520,
-    date: "2024-01-12",
-    status: "completed" as const,
-    method: "Credit Card",
-  },
-  {
-    id: "pay_005",
-    customer: "Fresh Foods Market",
-    amount: 9850,
-    date: "2024-01-11",
-    status: "failed" as const,
-    method: "Bank Transfer",
-  },
-];
-
-const paymentMethods = [
-  { name: "Credit Card", percentage: 45, color: "bg-primary" },
-  { name: "Bank Transfer", percentage: 35, color: "bg-green-500" },
-  { name: "PayPal", percentage: 15, color: "bg-blue-500" },
-  { name: "Other", percentage: 5, color: "bg-muted-foreground" },
-];
+import { usePayments } from "@/hooks/usePayments";
+import { useInvoices } from "@/hooks/useInvoices";
 
 const statusConfig = {
   completed: { label: "Completed", color: "bg-green-500/10 text-green-600" },
@@ -109,6 +27,66 @@ const statusConfig = {
 };
 
 export function BillingTab() {
+  const { data: payments, isLoading: isLoadingPayments } = usePayments();
+  const { data: invoices, isLoading: isLoadingInvoices } = useInvoices();
+
+  const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+  // Outstanding = Pending + Overdue
+  const outstanding = invoices?.filter(i => ['pending', 'overdue'].includes(i.status)).reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const paidThisMonth = payments?.filter(p => {
+    const d = new Date(p.payment_date);
+    return d.getMonth() === currentMonth && p.status === 'completed';
+  }).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+
+  const overdue = invoices?.filter(i => i.status === 'overdue').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+
+  const billingStats = [
+    {
+      title: "Total Revenue",
+      value: `PKR ${totalRevenue.toLocaleString()}`,
+      change: 12.5, // Calc change if historical data
+      trend: "up" as const,
+      icon: DollarSign,
+      color: "bg-green-500/10 text-green-600",
+    },
+    {
+      title: "Outstanding",
+      value: `PKR ${outstanding.toLocaleString()}`,
+      change: -8.2,
+      trend: "down" as const,
+      icon: Clock,
+      color: "bg-yellow-500/10 text-yellow-600",
+    },
+    {
+      title: "Paid This Month",
+      value: `PKR ${paidThisMonth.toLocaleString()}`,
+      change: 18.7,
+      trend: "up" as const,
+      icon: CheckCircle,
+      color: "bg-primary/10 text-primary",
+    },
+    {
+      title: "Overdue",
+      value: `PKR ${overdue.toLocaleString()}`,
+      change: 5.3,
+      trend: "up" as const,
+      icon: AlertCircle,
+      color: "bg-red-500/10 text-red-600",
+    },
+  ];
+
+  const recentPayments = payments?.slice(0, 5) || [];
+
+  const paymentMethods = [
+    { name: "Credit Card", percentage: 45, color: "bg-primary" },
+    { name: "Bank Transfer", percentage: 35, color: "bg-green-500" },
+    { name: "PayPal", percentage: 15, color: "bg-blue-500" },
+    { name: "Other", percentage: 5, color: "bg-muted-foreground" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -184,18 +162,18 @@ export function BillingTab() {
                         <CreditCard className="w-4 h-4 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">{payment.customer}</p>
+                        <p className="font-medium">{payment.customer?.name || "Unknown Customer"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {payment.method} • {new Date(payment.date).toLocaleDateString()}
+                          {payment.method || "Unknown Method"} • {new Date(payment.payment_date).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className={statusConfig[payment.status].color}>
-                        {statusConfig[payment.status].label}
+                      <Badge className={statusConfig[payment.status as keyof typeof statusConfig]?.color || "bg-muted"}>
+                        {statusConfig[payment.status as keyof typeof statusConfig]?.label || payment.status}
                       </Badge>
                       <span className="font-mono font-medium">
-                        ${payment.amount.toLocaleString()}
+                        PKR {Number(payment.amount).toLocaleString()}
                       </span>
                     </div>
                   </motion.div>
@@ -236,6 +214,6 @@ export function BillingTab() {
           </Card>
         </motion.div>
       </div>
-    </div>
+    </div >
   );
 }

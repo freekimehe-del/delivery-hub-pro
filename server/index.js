@@ -12,21 +12,123 @@ app.use(express.json());
 const DB = require('./db'); // The new "Brain"
 const { generateManifestNumber, validateManifest } = require('./manifest_engine');
 const financeAPI = require('./finance_api'); // Finance Module
+const customsEngine = require('./customs_engine'); // Customs Module
+
+// Customs Duty Calculator Endpoint (Phase 2)
+app.post('/api/customs/calculate-duty', (req, res) => {
+  try {
+    const { hs_code, value_pkr } = req.body;
+    if (!hs_code || !value_pkr) {
+      return res.status(400).json({ error: "hs_code and value_pkr are required" });
+    }
+
+    const result = customsEngine.calculateDuty(hs_code, parseFloat(value_pkr));
+    console.log(`Calculated duty for ${hs_code}:`, result);
+    res.json({ ok: true, data: result });
+  } catch (e) {
+    console.error("Duty Calc Error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // The following container engine imports are no longer directly used for API logic,
+
+// Finance: runtime flag to detect Supabase presence for mock fallback
+const hasSupabase = !!((process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) && (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY));
+// Simple in-memory invoices store for mock mode
+const mockInvoices = [];
 // as the DB now manages container state directly.
 // const { getContainerStats, logReturn, scheduleMaintenance, getAllContainers } = require('./container_engine');
 
 // In-memory store (mock) - These are now managed by DB.js
 app.post('/api/finance/payments', financeAPI.recordPayment);
-app.get('/api/finance/ledger/accounts', financeAPI.getChartOfAccounts);
-app.get('/api/finance/ledger/entries', financeAPI.getJournalEntries);
-app.post('/api/finance/ledger/entries', financeAPI.createJournalEntry);
+// Finance Report Routes (Added)
+app.get('/api/finance/reports/pl', financeAPI.getProfitLoss);
+app.get('/api/finance/reports/bs', financeAPI.getBalanceSheet);
 app.get('/api/finance/dashboard', financeAPI.getDashboardMetrics);
-app.get('/api/finance/settlements', financeAPI.getDriverSettlements);
-app.post('/api/finance/settlements/process', financeAPI.processDriverSettlement);
-app.get('/api/finance/fleet-costs', financeAPI.getFleetCosts);
-app.post('/api/finance/fleet-costs', financeAPI.recordFleetCost);
-app.post('/api/finance/rates/calculate', financeAPI.estimateShipmentCost);
+
+// Finance AR: Customers (fallback to DB mock if Supabase not configured)
+app.get('/api/finance/customers', (req, res) => {
+  if (!hasSupabase) {
+    const customers = (DB.db.customers?.profiles || []).map((c, idx) => ({
+      id: c.id || `cust_${idx + 1}`,
+      customer_code: c.code || c.customer_code || `CUST-${(idx + 1).toString().padStart(3, '0')}`,
+      customer_name: c.name || c.customer_name || c.company || c.full_name || `Customer ${(idx + 1)}`,
+      email: c.email || `customer${idx + 1}@example.com`,
+    }));
+    return res.json({ customers });
+  }
+  return financeAPI.getCustomers(req, res);
+});
+
+// Finance AR: Unbilled shipments (fallback uses all DB shipments as unbilled)
+app.get('/api/finance/shipments/unbilled', async (req, res) => {
+  if (!hasSupabase) {
+    const shipments = Object.values(DB.db.logistics?.shipments || {});
+    return res.json({ shipments });
+  }
+  return financeAPI.getUnbilledShipments(req, res);
+});
+
+// Finance AR: Invoices list (fallback to in-memory store)
+app.get('/api/finance/invoices', async (req, res) => {
+  if (!hasSupabase) {
+    // Supports ?status= filter similar to frontend usage
+    const { status } = req.query || {};
+    let data = mockInvoices;
+    if (status && status !== 'all') {
+      data = data.filter(inv => inv.status === status);
+    }
+    return res.json({ invoices: data });
+  }
+  return financeAPI.getInvoices(req, res);
+});
+
+// Finance AR: Create invoice (fallback to in-memory)
+app.post('/api/finance/invoices', async (req, res) => {
+  if (!hasSupabase) {
+    try {
+      const { customer_id, invoice_date, due_date, line_items = [], shipment_id, bl_number, notes } = req.body || {};
+      const subtotal = line_items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
+      const tax_amount = line_items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unit_price || 0) * Number(item.tax_rate || 0) / 100), 0);
+      const total_amount = subtotal + tax_amount;
+      const invoice = {
+        id: `inv_${Date.now()}`,
+        invoice_number: `INV-${Date.now()}`,
+        customer_id: customer_id || (DB.db.customers?.profiles?.[0]?.id || 'CUST-001'),
+        invoice_date: invoice_date || new Date().toISOString().split('T')[0],
+        due_date: due_date || new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        shipment_id: shipment_id || null,
+        bl_number: bl_number || null,
+        subtotal,
+        tax_amount,
+        total_amount,
+        balance: total_amount,
+        notes: notes || null,
+        status: 'sent',
+        created_at: new Date().toISOString(),
+      };
+      mockInvoices.push(invoice);
+      return res.status(201).json({ invoice, message: 'Invoice created successfully (mock)' });
+    } catch (e) {
+      return res.status(400).json({ error: e.message || 'Failed to create invoice' });
+    }
+  }
+  return financeAPI.createInvoice(req, res);
+});
+
+// Finance AR: Update invoice status (optional for responsiveness)
+app.patch('/api/finance/invoices/:id/status', (req, res) => {
+  if (!hasSupabase) {
+    const { id } = req.params;
+    const { status } = req.body || {};
+    const inv = mockInvoices.find(i => i.id === id || i.invoice_number === id);
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+    inv.status = status || inv.status;
+    return res.json({ invoice: inv });
+  }
+  return financeAPI.updateInvoiceStatus(req, res);
+});
 
 // POST /api/shipments - create a new shipment
 app.post('/api/shipments', (req, res) => {
@@ -220,10 +322,67 @@ app.post('/api/transit/event', (req, res) => {
   }
 });
 
+// Detailed Proof of Delivery (POD)
+// POST /api/pods - Submit evidence (multipart)
+app.post('/api/pods', upload.any(), (req, res) => {
+  try {
+    const fields = req.body || {};
+    const files = Array.isArray(req.files) ? req.files : [];
+
+    // Ensure storage
+    DB.db.logistics = DB.db.logistics || {};
+    DB.db.logistics.pods = DB.db.logistics.pods || [];
+
+    const id = uuidv4();
+    const manifest_id = fields.manifest_id || fields.manifest || 'unknown';
+
+    // Build attachment metadata (mock storage URLs)
+    const attachments = files.map(f => ({
+      filename: f.originalname,
+      mimetype: f.mimetype,
+      size: f.size,
+      url: `https://mock-storage.example/pods/${manifest_id}/${id}/${encodeURIComponent(f.originalname)}`,
+    }));
+
+    const record = {
+      id,
+      manifest_id,
+      signatory: fields.signatory || 'N/A',
+      delivery_time: fields.delivery_time || new Date().toISOString(),
+      location: fields.location || 'Unknown',
+      gps_lat: fields.gps_lat ? Number(fields.gps_lat) : null,
+      gps_lng: fields.gps_lng ? Number(fields.gps_lng) : null,
+      condition: fields.condition || 'good',
+      seal_intact: String(fields.seal_intact || 'true').toLowerCase() === 'true',
+      notes: fields.notes || '',
+      attachments,
+      created_at: new Date().toISOString(),
+    };
+
+    DB.db.logistics.pods.push(record);
+
+    return res.status(201).json({ ok: true, pod: record });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e && e.message ? e.message : 'Failed to submit POD' });
+  }
+});
+
+// GET /api/pods - List PODs (optional manifest_id query)
+app.get('/api/pods', (req, res) => {
+  try {
+    const manifest_id = req.query.manifest_id;
+    const list = Array.isArray(DB.db.logistics?.pods) ? DB.db.logistics.pods : [];
+    const pods = manifest_id ? list.filter(p => p.manifest_id === manifest_id) : list;
+    return res.json({ ok: true, pods });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e && e.message ? e.message : 'Failed to fetch PODs' });
+  }
+});
+
 // GET /api/pods/:manifest_id - Get PODs for a manifest
 app.get('/api/pods/:manifest_id', (req, res) => {
   const { manifest_id } = req.params;
-  const relatedPods = Object.values(DB.db.logistics.pods).filter(p => p.manifest_id === manifest_id);
+  const relatedPods = Object.values(DB.db.logistics.pods || {}).filter(p => p.manifest_id === manifest_id);
   return res.json({ ok: true, pods: relatedPods });
 });
 
@@ -300,6 +459,291 @@ app.post('/api/ai/optimize', (req, res) => {
       details: "AI recommends Intermodal Rail for Hub A -> Hub B leg to reduce carbon footprint."
     }
   });
+});
+
+// --- Logistics Manifest & Bill of Lading ---
+app.post('/api/logistics/manifest-bl', (req, res) => {
+  try {
+    const now = new Date();
+    const iso = now.toISOString();
+    const dateTime = iso.split('.')[0].replace('T', ' ');
+
+    const payload = req.body || {};
+
+    // Normalize inputs with fallbacks
+    const mode = payload.mode || payload.transport_mode || 'Sea';
+    const carrier = payload.carrier_name || payload.carrier || 'Oceanic Shipping Lines (OSL)';
+    const vessel = payload.vessel_name || payload.vessel || (mode.toLowerCase() === 'sea' ? 'OSL Horizon' : null);
+    const voyage = payload.voyage_number || payload.voyage || (mode.toLowerCase() === 'sea' ? 'OSL-HRZ-072' : null);
+    const flight = payload.flight_number || null;
+    const truck = payload.truck_number || (mode.toLowerCase() === 'road' ? 'KHI-TRK-9482' : null);
+
+    const pol = payload.pol || payload.port_loading || payload.port_of_loading || 'Karachi Port (PKKHI), Pakistan';
+    const pod = payload.pod || payload.port_discharge || payload.port_of_discharge || 'Jebel Ali (AEJEA), UAE';
+    const finalDestination = payload.final_destination || 'Dubai, UAE';
+
+    const shipper = payload.shipper || {
+      name: 'TechLogistics Corp',
+      address: '12 Industrial Ave, Korangi, Karachi, Pakistan',
+      contact: '+92 21 3000 1122, ops@techlogistics.com',
+      assumed: true,
+    };
+    const consignee = payload.consignee || {
+      name: 'Global Exports Ltd',
+      address: '220 Harbor Road, Jebel Ali, Dubai, UAE',
+      contact: '+971 4 123 4567, imports@globalexports.com',
+      assumed: true,
+    };
+    const notify = payload.notify_party || payload.notify || {
+      name: consignee.name,
+      address: consignee.address,
+      contact: '+971 4 123 4567',
+      assumed: true,
+    };
+
+    const containers = Array.isArray(payload.containers)
+      ? payload.containers
+      : (payload.container ? [payload.container] : [
+        { number: 'OSLU4567890', size_type: '40HC', seal: 'SL-998877', iso: '45G1', assumed: true },
+      ]);
+
+    const cargoLines = Array.isArray(payload.packages)
+      ? payload.packages
+      : (payload.package_details ? [payload.package_details] : [
+        {
+          packages: 200,
+          package_type: 'Cartons on Pallets',
+          description: 'Consumer Electronics (Routers, IoT Sensors)',
+          hs_code: '8517.62; 9026.10',
+          gross_weight_kg: 4800,
+          net_weight_kg: 4100,
+          volume_cbm: 28.5,
+          marks_numbers: 'TECLOG/GE-2025/HRZ-072',
+          assumed: true,
+        },
+      ]);
+
+    const paymentTerms = payload.payment_terms || 'CIF';
+    const specialInstructions = payload.special_instructions || [
+      'Handle as general cargo.',
+      'Ensure customs documentation is pre-verified 24 hours before vessel ETA.',
+    ];
+
+    const manifestNumber = (typeof generateManifestNumber === 'function')
+      ? generateManifestNumber()
+      : `MAN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const blNumber = `BL-${manifestNumber.replace('MAN-', '')}`;
+
+    const manifest = {
+      manifest_number: manifestNumber,
+      date_time: dateTime,
+      shipper,
+      consignee,
+      notify_party: notify,
+      mode,
+      carrier,
+      vessel,
+      voyage,
+      flight,
+      truck_number: truck,
+      port_of_loading: pol,
+      port_of_discharge: pod,
+      final_destination: finalDestination,
+      containers: containers.map(c => ({
+        container_number: c.number || c.container_number || 'OSLU4567890',
+        size_type: c.size_type || c.size || '40HC',
+        seal_number: c.seal || c.seal_number || 'SL-998877',
+        iso: c.iso || '45G1',
+        assumed: !!c.assumed,
+      })),
+      packages: cargoLines.map((l, idx) => ({
+        line_no: idx + 1,
+        number_of_packages: l.packages || l.number_of_packages || 200,
+        type_of_packages: l.package_type || l.type_of_packages || 'Cartons on Pallets',
+        description_of_goods: l.description || l.description_of_goods || 'Consumer Electronics (Routers, IoT Sensors)',
+        hs_code: l.hs_code || '8517.62; 9026.10',
+        gross_weight: Number(l.gross_weight_kg || l.gross_weight || 4800),
+        net_weight: Number(l.net_weight_kg || l.net_weight || 4100),
+        volume_cbm: Number(l.volume_cbm || l.volume || 28.5),
+        marks_numbers: l.marks_numbers || 'TECLOG/GE-2025/HRZ-072',
+        assumed: !!l.assumed,
+      })),
+      payment_terms: paymentTerms,
+      special_instructions: Array.isArray(specialInstructions) ? specialInstructions : [String(specialInstructions)],
+    };
+
+    const firstContainer = manifest.containers[0] || {};
+    const firstLine = manifest.packages[0] || {};
+
+    const bl = {
+      bl_number: blNumber,
+      issue_date: iso.slice(0, 10),
+      issue_place: ((pol && pol.split(',')[0]) || 'Karachi').trim(),
+      shipper: { name: shipper.name, address: shipper.address },
+      consignee: { name: consignee.name, address: consignee.address },
+      notify_party: { name: notify.name, address: notify.address },
+      vessel_voyage: vessel ? `${vessel}${voyage ? ' / ' + voyage : ''}` : (flight || truck || 'N/A'),
+      port_of_loading: pol,
+      port_of_discharge: pod,
+      final_destination: finalDestination,
+      description_of_goods: firstLine.description_of_goods,
+      container_and_seal: `${firstContainer.container_number || 'N/A'} / ${firstContainer.seal_number || 'N/A'}`,
+      marks_and_numbers: firstLine.marks_numbers || 'N/A',
+      freight_and_charges: paymentTerms === 'CIF' ? 'Freight Prepaid (CIF)' : `Terms: ${paymentTerms}`,
+      signed_for_carrier: `${carrier} – Authorized Signatory`,
+    };
+
+    // Optional: persist lightweight record in mock DB
+    try {
+      DB.db.logistics = DB.db.logistics || {};
+      DB.db.logistics.manifests = DB.db.logistics.manifests || [];
+      DB.db.logistics.manifests.push({ id: manifestNumber, manifest, bl, created_at: iso });
+    } catch (_) { }
+
+    return res.status(201).json({ ok: true, manifest, bl });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e && e.message ? e.message : 'Failed to generate manifest/BL' });
+  }
+});
+
+// Frontend compatibility: Create manifest via /api/manifests
+app.post('/api/manifests', (req, res) => {
+  try {
+    const now = new Date();
+    const iso = now.toISOString();
+
+    // Reuse generation by mimicking the same logic
+    const payload = req.body || {};
+    const mode = payload.mode || payload.transport_mode || 'Sea';
+    const carrier = payload.carrier_name || payload.carrier || 'Oceanic Shipping Lines (OSL)';
+    const vessel = payload.vessel_name || payload.vessel || (String(mode).toLowerCase() === 'maritime' || String(mode).toLowerCase() === 'sea' ? 'OSL Horizon' : null);
+    const voyage = payload.voyage_number || payload.voyage || 'VOY-001';
+    const pol = payload.pol || payload.port_loading || payload.port_of_loading || 'Karachi Port (PKKHI), Pakistan';
+    const pod = payload.pod || payload.port_discharge || payload.port_of_discharge || 'Jebel Ali (AEJEA), UAE';
+
+    // Generate via existing endpoint logic (inline copy)
+    const requestLike = { body: { ...payload, transport_mode: mode, vessel_name: vessel, voyage_number: voyage, pol, pod } };
+    const resBuffer = {};
+
+    // Inline recomputation
+    const dateTime = iso.split('.')[0].replace('T', ' ');
+
+    const shipper = payload.shipper || {
+      name: 'TechLogistics Corp', address: '12 Industrial Ave, Korangi, Karachi, Pakistan', contact: '+92 21 3000 1122, ops@techlogistics.com', assumed: true,
+    };
+    const consignee = payload.consignee || {
+      name: 'Global Exports Ltd', address: '220 Harbor Road, Jebel Ali, Dubai, UAE', contact: '+971 4 123 4567, imports@globalexports.com', assumed: true,
+    };
+    const notify = payload.notify_party || payload.notify || { name: consignee.name, address: consignee.address, contact: '+971 4 123 4567', assumed: true };
+
+    const containers = Array.isArray(payload.containers) ? payload.containers : (
+      payload.container ? [payload.container] : [{ number: 'OSLU4567890', size_type: '40HC', seal: 'SL-998877', iso: '45G1', assumed: true }]
+    );
+
+    const cargoLines = Array.isArray(payload.packages) ? payload.packages : (
+      payload.package_details ? [payload.package_details] : [{ packages: 200, package_type: 'Cartons on Pallets', description: 'Consumer Electronics (Routers, IoT Sensors)', hs_code: '8517.62; 9026.10', gross_weight_kg: 4800, net_weight_kg: 4100, volume_cbm: 28.5, marks_numbers: 'TECLOG/GE-2025/HRZ-072', assumed: true }]
+    );
+
+    const paymentTerms = payload.payment_terms || 'CIF';
+
+    const manifestNumber = (typeof generateManifestNumber === 'function')
+      ? generateManifestNumber()
+      : `MAN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const blNumber = `BL-${manifestNumber.replace('MAN-', '')}`;
+
+    const manifest = {
+      manifest_number: manifestNumber,
+      date_time: dateTime,
+      shipper,
+      consignee,
+      notify_party: notify,
+      mode,
+      carrier,
+      vessel,
+      voyage,
+      port_of_loading: pol,
+      port_of_discharge: pod,
+      final_destination: payload.final_destination || 'Dubai, UAE',
+      containers: containers.map(c => ({
+        container_number: c.number || c.container_number || 'OSLU4567890',
+        size_type: c.size_type || c.size || '40HC',
+        seal_number: c.seal || c.seal_number || 'SL-998877',
+        iso: c.iso || '45G1',
+        assumed: !!c.assumed,
+      })),
+      packages: cargoLines.map((l, idx) => ({
+        line_no: idx + 1,
+        number_of_packages: l.packages || l.number_of_packages || 200,
+        type_of_packages: l.package_type || l.type_of_packages || 'Cartons on Pallets',
+        description_of_goods: l.description || l.description_of_goods || 'Consumer Electronics (Routers, IoT Sensors)',
+        hs_code: l.hs_code || '8517.62; 9026.10',
+        gross_weight: Number(l.gross_weight_kg || l.gross_weight || 4800),
+        net_weight: Number(l.net_weight_kg || l.net_weight || 4100),
+        volume_cbm: Number(l.volume_cbm || l.volume || 28.5),
+        marks_numbers: l.marks_numbers || 'TECLOG/GE-2025/HRZ-072',
+        assumed: !!l.assumed,
+      })),
+      payment_terms: paymentTerms,
+      special_instructions: Array.isArray(payload.special_instructions) ? payload.special_instructions : (payload.special_instructions ? [String(payload.special_instructions)] : []),
+    };
+
+    const firstContainer = manifest.containers[0] || {};
+    const firstLine = manifest.packages[0] || {};
+
+    const bl = {
+      bl_number: blNumber,
+      issue_date: iso.slice(0, 10),
+      issue_place: ((pol && pol.split(',')[0]) || 'Karachi').trim(),
+      shipper: { name: shipper.name, address: shipper.address },
+      consignee: { name: consignee.name, address: consignee.address },
+      notify_party: { name: notify.name, address: notify.address },
+      vessel_voyage: vessel ? `${vessel}${voyage ? ' / ' + voyage : ''}` : 'N/A',
+      port_of_loading: pol,
+      port_of_discharge: pod,
+      final_destination: manifest.final_destination,
+      description_of_goods: firstLine.description_of_goods,
+      container_and_seal: `${firstContainer.container_number || 'N/A'} / ${firstContainer.seal_number || 'N/A'}`,
+      marks_and_numbers: firstLine.marks_numbers || 'N/A',
+      freight_and_charges: paymentTerms === 'CIF' ? 'Freight Prepaid (CIF)' : `Terms: ${paymentTerms}`,
+      signed_for_carrier: `${carrier} – Authorized Signatory`,
+    };
+
+    // Save
+    try {
+      DB.db.logistics = DB.db.logistics || {};
+      DB.db.logistics.manifests = DB.db.logistics.manifests || [];
+      DB.db.logistics.manifests.push({ id: manifestNumber, manifest, bl, created_at: iso, status: 'created' });
+    } catch (_) { }
+
+    return res.status(201).json({ ok: true, id: manifestNumber, manifest, bl });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e && e.message ? e.message : 'Failed to create manifest' });
+  }
+});
+
+// Frontend compatibility: List manifests via /api/manifests
+app.get('/api/manifests', (req, res) => {
+  try {
+    const items = (DB.db.logistics && DB.db.logistics.manifests) ? DB.db.logistics.manifests : [];
+    const manifests = items.map(rec => ({
+      id: rec.id,
+      manifest_number: rec.manifest?.manifest_number || rec.id,
+      transport_mode: (rec.manifest?.mode || '').toLowerCase() || 'sea',
+      carrier: rec.manifest?.carrier,
+      vessel: rec.manifest?.vessel,
+      voyage: rec.manifest?.voyage,
+      pol: rec.manifest?.port_of_loading,
+      pod: rec.manifest?.port_of_discharge,
+      status: rec.status || 'created',
+      created_at: rec.created_at,
+      bl_number: rec.bl?.bl_number,
+    }));
+    return res.json({ manifests });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e && e.message ? e.message : 'Failed to fetch manifests' });
+  }
 });
 
 // --- Phase 7: Customs Clearance Module ---

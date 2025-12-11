@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import CommandCenter from "./pages/CommandCenter";
 import Fleet from "./pages/Fleet";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
@@ -12,6 +13,7 @@ import ApiDocs from "./pages/ApiDocs";
 import Settings from "./pages/Settings";
 import Customs from "./pages/Customs";
 import CustomsWizard from "./pages/customs/CustomsWizard";
+import Roles from "./pages/settings/Roles";
 import NotFound from "./pages/NotFound";
 import Logistics from "./pages/Logistics";
 import CreateShipment from "./pages/logistics/CreateShipment";
@@ -30,6 +32,16 @@ import CostEstimator from './pages/finance/logistics/CostEstimator';
 import Bills from './pages/finance/ap/Bills';
 import CreateBill from "./pages/finance/ap/CreateBill";
 import FinancialReports from "./pages/finance/reports/FinancialReports";
+import NewClearanceJob from "./pages/clearance/NewClearanceJob";
+import HSCodes from "./pages/customs/HSCodes";
+import DutyCalculator from "./pages/customs/DutyCalculator";
+import ClearanceDashboard from "./pages/clearance/ClearanceDashboard";
+import GDFiling from "./pages/clearance/GDFiling";
+import LandedCost from "./pages/finance/logistics/LandedCost";
+import WarehouseDashboard from "./pages/warehousing/Dashboard";
+import WarehouseInventory from "./pages/warehousing/Inventory";
+import WarehouseReports from "./pages/warehousing/Reports";
+import { DollarSign, PieChart } from "lucide-react"; // Wait, PieChart is used in Sidebar, not here. But App.tsx doesn't need it.
 
 const queryClient = new QueryClient();
 
@@ -41,6 +53,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/command-center" element={<CommandCenter />} />
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/fleet/vehicles" element={<Fleet />} />
           <Route path="/fleet/drivers" element={<Fleet />} />
@@ -62,22 +75,30 @@ const App = () => (
           <Route path="/logistics/pod" element={<POD />} />
           <Route path="/logistics/containers" element={<Containers />} />
           <Route path="/logistics/ai-optimizer" element={<AIOptimizer />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/customs" element={<Customs />} />
+          <Route path="/clearance" element={<ClearanceDashboard />} />
+          <Route path="/clearance/new" element={<NewClearanceJob />} />
+          <Route path="/clearance/:jobId/file-gd" element={<GDFiling />} />
+          <Route path="/customs/calculator" element={<DutyCalculator />} />
           <Route path="/customs/filing" element={<CustomsWizard />} />
           <Route path="/customs/consignments" element={<Customs />} />
-          <Route path="/customs/warehouses" element={<Customs />} />
-          <Route path="/customs/hs-codes" element={<Customs />} />
+
+          <Route path="/customs/hs-codes" element={<HSCodes />} />
           <Route path="/customs/auctions" element={<Customs />} />
+
+          <Route path="/warehousing" element={<WarehouseDashboard />} />
+          <Route path="/warehousing/inventory" element={<WarehouseInventory />} />
+          <Route path="/warehousing/reports" element={<WarehouseReports />} />
+
           <Route path="/finance" element={<FinanceDashboard />} />
           <Route path="/finance/dashboard" element={<FinanceDashboard />} />
           <Route path="/finance/invoices" element={<Invoices />} />
-          <Route path="/finance/invoices/new" element={<CreateInvoice />} />
+          <Route path="/finance/invoices/create" element={<CreateInvoice />} />
           <Route path="/finance/bills" element={<Bills />} />
           <Route path="/finance/bills/new" element={<CreateBill />} />
           <Route path="/finance/settlements" element={<DriverSettlements />} />
           <Route path="/finance/fleet-costs" element={<FleetCosting />} />
           <Route path="/finance/cost-estimator" element={<CostEstimator />} />
+          <Route path="/finance/landed-cost" element={<LandedCost />} />
           <Route path="/finance/reports" element={<FinancialReports />} />
           <Route path="/api" element={<ApiDocs />} />
           <Route path="/api/docs" element={<ApiDocs />} />
@@ -87,6 +108,7 @@ const App = () => (
           <Route path="/settings/company" element={<Settings />} />
           <Route path="/settings/notifications" element={<Settings />} />
           <Route path="/settings/areas" element={<Settings />} />
+          <Route path="/settings/roles" element={<Roles />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

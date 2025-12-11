@@ -30,32 +30,24 @@ const tabs = [
 ];
 
 // Hook must be inside component, refactoring structure slightly
+import { useCustomers } from "@/hooks/useCustomers";
+import { useInvoices } from "@/hooks/useInvoices";
+
+// ... imports
+
 const Customers = () => {
-  const [metricsData, setMetricsData] = useState<CustomerMetrics | null>(null);
+  const { data: customers } = useCustomers();
+  const { data: invoices } = useInvoices();
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function load() {
-      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
-      try {
-        const resp = await fetch(`${apiUrl}/api/customers`);
-        if (resp.ok) {
-          const json = await resp.json();
-          setMetricsData(json.stats);
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    }
-    load();
-  }, []);
+  const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
 
   const metrics = [
     {
       title: "Total Customers",
-      value: String(metricsData?.total_count || 0),
+      value: String(customers?.length || 0),
       change: 0,
       changeLabel: "this month",
       icon: <Users className="w-5 h-5" />,
@@ -63,7 +55,7 @@ const Customers = () => {
     },
     {
       title: "Active Accounts",
-      value: String(metricsData?.active_count || 0),
+      value: String(customers?.filter(c => c.status === 'active' || c.status === 'premium').length || 0),
       change: 0,
       changeLabel: "this month",
       icon: <Building2 className="w-5 h-5" />,
@@ -71,15 +63,15 @@ const Customers = () => {
     },
     {
       title: "Total Revenue",
-      value: `PKR ${metricsData?.total_revenue?.toLocaleString() || '0'}`,
+      value: `PKR ${totalRevenue.toLocaleString()}`,
       change: 0,
       changeLabel: "this month",
       icon: <DollarSign className="w-5 h-5" />,
       iconColor: "bg-fleet-purple/10 text-fleet-purple",
     },
     {
-      title: "Avg. Order Value",
-      value: `PKR ${metricsData?.avg_order_value?.toLocaleString() || '0'}`,
+      title: "Avg. Order Value", // Approximation: Total Revenue / Invoices
+      value: `PKR ${(invoices?.length ? (totalRevenue / invoices.length).toFixed(0) : '0')}`,
       change: 0,
       changeLabel: "vs last month",
       icon: <TrendingUp className="w-5 h-5" />,

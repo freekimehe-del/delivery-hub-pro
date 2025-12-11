@@ -1,103 +1,199 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 export default function FinancialReports() {
-    // Mock data for reports since we don't have enough real data yet
-    const revenueData = [
-        { month: 'Jan', revenue: 45000, expenses: 32000 },
-        { month: 'Feb', revenue: 52000, expenses: 35000 },
-        { month: 'Mar', revenue: 48000, expenses: 38000 },
-        { month: 'Apr', revenue: 61000, expenses: 42000 },
-        { month: 'May', revenue: 55000, expenses: 39000 },
-        { month: 'Jun', revenue: 67000, expenses: 45000 },
-    ];
+    const [activeTab, setActiveTab] = useState('pl');
+    const [loading, setLoading] = useState(false);
 
-    const categoryData = [
-        { name: 'Freight', value: 45 },
-        { name: 'Customs', value: 25 },
-        { name: 'Warehousing', value: 20 },
-        { name: 'Value Added', value: 10 },
-    ];
+    // PL Data
+    const [plData, setPlData] = useState<any>(null);
+    // BS Data
+    const [bsData, setBsData] = useState<any>(null);
+
+    useEffect(() => {
+        loadData();
+    }, [activeTab]);
+
+    const loadData = async () => {
+        setLoading(true);
+        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+        try {
+            if (activeTab === 'pl') {
+                const res = await fetch(`${apiUrl}/api/finance/reports/pl`);
+                if (res.ok) setPlData(await res.json());
+            } else {
+                const res = await fetch(`${apiUrl}/api/finance/reports/bs`);
+                if (res.ok) setBsData(await res.json());
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <DashboardLayout>
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold tracking-tight">Financial Reports</h1>
-                <p className="text-muted-foreground">Analysis and statements</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Revenue vs Expenses */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="font-semibold text-gray-900 mb-4">Revenue vs Expenses</h3>
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={revenueData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="revenue" fill="#3b82f6" name="Revenue" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1>
+                        <p className="text-muted-foreground">Detailed financial statements and analysis.</p>
                     </div>
+                    <Button variant="outline">
+                        <Download className="w-4 h-4 mr-2" />
+                        Export PDF
+                    </Button>
                 </div>
 
-                {/* Profit Trend */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="font-semibold text-gray-900 mb-4">Profit Trend</h3>
-                    <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={revenueData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="revenue"
-                                    stroke="#22c55e"
-                                    strokeWidth={2}
-                                    name="Net Profit"
-                                    activeDot={{ r: 8 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="pl">Profit & Loss</TabsTrigger>
+                        <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
+                        <TabsTrigger value="cf" disabled>Cash Flow</TabsTrigger>
+                    </TabsList>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">Balance Sheet</h3>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Statement</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">Assets, liabilities, and equity summary as of today.</p>
-                    <button className="text-blue-600 text-sm font-medium hover:underline">View Report →</button>
-                </div>
+                    <TabsContent value="pl" className="space-y-4">
+                        {loading ? <div>Loading...</div> : plData && (
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex justify-between">
+                                        <CardTitle>Profit & Loss Statement</CardTitle>
+                                        <div className="text-sm text-muted-foreground">
+                                            {plData.fromDate} to {plData.toDate}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-6">
+                                        {/* Revenue */}
+                                        <div>
+                                            <h3 className="font-semibold text-lg border-b pb-2 mb-3">Revenue</h3>
+                                            <div className="space-y-2">
+                                                {plData.report.revenue.map((item: any) => (
+                                                    <div key={item.id} className="flex justify-between text-sm">
+                                                        <span>{item.account_name}</span>
+                                                        <span>{item.amount.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between font-bold pt-2">
+                                                    <span>Total Revenue</span>
+                                                    <span>{plData.summary.totalRevenue.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">Profit & Loss</h3>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Statement</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">Revenue, costs, and expenses over a specific period.</p>
-                    <button className="text-blue-600 text-sm font-medium hover:underline">View Report →</button>
-                </div>
+                                        {/* Expenses */}
+                                        <div>
+                                            <h3 className="font-semibold text-lg border-b pb-2 mb-3">Operating Expenses</h3>
+                                            <div className="space-y-2">
+                                                {plData.report.expense.map((item: any) => (
+                                                    <div key={item.id} className="flex justify-between text-sm">
+                                                        <span>{item.account_name}</span>
+                                                        <span>{item.amount.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between font-bold pt-2">
+                                                    <span>Total Expenses</span>
+                                                    <span>{plData.summary.totalExpense.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">Cash Flow</h3>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Statement</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">Inflows and outflows of cash from operations.</p>
-                    <button className="text-blue-600 text-sm font-medium hover:underline">View Report →</button>
-                </div>
+                                        {/* Net Profit */}
+                                        <div className="bg-slate-100 p-4 rounded-lg flex justify-between items-center">
+                                            <span className="font-bold text-lg">Net Profit (Loss)</span>
+                                            <span className={`font-bold text-xl ${plData.summary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                PKR {plData.summary.netProfit.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="bs" className="space-y-4">
+                        {loading ? <div>Loading...</div> : bsData && (
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex justify-between">
+                                        <CardTitle>Balance Sheet</CardTitle>
+                                        <div className="text-sm text-muted-foreground">
+                                            As of {bsData.asOfDate}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Assets */}
+                                        <div>
+                                            <h3 className="font-bold bg-green-50 p-2 text-green-800 mb-4 rounded">ASSETS</h3>
+                                            {bsData.report.assets.map((cat: any, i: number) => (
+                                                <div key={i} className="mb-6">
+                                                    <h4 className="font-semibold text-sm text-gray-600 mb-2 uppercase">{cat.category}</h4>
+                                                    <div className="space-y-1 pl-2 border-l-2 border-gray-100">
+                                                        {cat.accounts.map((acc: any, j: number) => (
+                                                            <div key={j} className="flex justify-between text-sm">
+                                                                <span>{acc.name}</span>
+                                                                <span>{acc.amount.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="font-bold border-t pt-2 flex justify-between">
+                                                <span>TOTAL ASSETS</span>
+                                                <span>{(20700000).toLocaleString()}</span> {/* Mock total matches data */}
+                                            </div>
+                                        </div>
+
+                                        {/* Liabilities & Equity */}
+                                        <div>
+                                            <h3 className="font-bold bg-red-50 p-2 text-red-800 mb-4 rounded">LIABILITIES & EQUITY</h3>
+
+                                            {bsData.report.liabilities.map((cat: any, i: number) => (
+                                                <div key={i} className="mb-6">
+                                                    <h4 className="font-semibold text-sm text-gray-600 mb-2 uppercase">{cat.category}</h4>
+                                                    <div className="space-y-1 pl-2 border-l-2 border-gray-100">
+                                                        {cat.accounts.map((acc: any, j: number) => (
+                                                            <div key={j} className="flex justify-between text-sm">
+                                                                <span>{acc.name}</span>
+                                                                <span>{acc.amount.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {bsData.report.equity.map((cat: any, i: number) => (
+                                                <div key={i} className="mb-6">
+                                                    <h4 className="font-semibold text-sm text-gray-600 mb-2 uppercase">{cat.category}</h4>
+                                                    <div className="space-y-1 pl-2 border-l-2 border-gray-100">
+                                                        {cat.accounts.map((acc: any, j: number) => (
+                                                            <div key={j} className="flex justify-between text-sm">
+                                                                <span>{acc.name}</span>
+                                                                <span>{acc.amount.toLocaleString()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="font-bold border-t pt-2 flex justify-between">
+                                                <span>TOTAL LIABILITIES & EQUITY</span>
+                                                <span>{(20700000).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
         </DashboardLayout>
     );

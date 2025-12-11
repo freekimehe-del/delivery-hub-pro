@@ -29,67 +29,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const customers = [
-  {
-    id: "cust_001",
-    name: "Acme Corporation",
-    email: "orders@acme.com",
-    phone: "+1 (555) 123-4567",
-    location: "New York, NY",
-    totalOrders: 156,
-    totalSpent: 45800,
-    status: "active" as const,
-  },
-  {
-    id: "cust_002",
-    name: "Tech Solutions Inc.",
-    email: "logistics@techsol.com",
-    phone: "+1 (555) 234-5678",
-    location: "Brooklyn, NY",
-    totalOrders: 89,
-    totalSpent: 23400,
-    status: "active" as const,
-  },
-  {
-    id: "cust_003",
-    name: "Global Imports LLC",
-    email: "shipping@globalimports.com",
-    phone: "+1 (555) 345-6789",
-    location: "Manhattan, NY",
-    totalOrders: 234,
-    totalSpent: 78900,
-    status: "premium" as const,
-  },
-  {
-    id: "cust_004",
-    name: "Quick Retail Co.",
-    email: "delivery@quickretail.com",
-    phone: "+1 (555) 456-7890",
-    location: "Queens, NY",
-    totalOrders: 67,
-    totalSpent: 15200,
-    status: "active" as const,
-  },
-  {
-    id: "cust_005",
-    name: "Fresh Foods Market",
-    email: "orders@freshfoods.com",
-    phone: "+1 (555) 567-8901",
-    location: "Staten Island, NY",
-    totalOrders: 312,
-    totalSpent: 98500,
-    status: "premium" as const,
-  },
-];
+import { useCustomers } from "@/hooks/useCustomers";
 
 export function AllCustomersTab() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: customers, isLoading } = useCustomers();
 
-  const filteredCustomers = customers.filter(
+  const filteredCustomers = customers?.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) || [];
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading customers...</div>;
+  }
 
   return (
     <motion.div
@@ -108,7 +62,7 @@ export function AllCustomersTab() {
             <div>
               <h3 className="font-semibold">Customer Directory</h3>
               <p className="text-xs text-muted-foreground">
-                {customers.length} customers total
+                {customers?.length || 0} customers total
               </p>
             </div>
           </div>
@@ -181,25 +135,25 @@ export function AllCustomersTab() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 text-sm">
                       <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                      {customer.email}
+                      {customer.email || "-"}
                     </div>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Phone className="w-3.5 h-3.5" />
-                      {customer.phone}
+                      {customer.phone || "-"}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5 text-sm">
                     <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                    {customer.location}
+                    {customer.location || "-"}
                   </div>
                 </TableCell>
                 <TableCell className="font-mono">
-                  {customer.totalOrders}
+                  {customer.total_orders || 0}
                 </TableCell>
                 <TableCell className="font-mono font-medium">
-                  ${customer.totalSpent.toLocaleString()}
+                  PKR {(customer.total_spent || 0).toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <Badge

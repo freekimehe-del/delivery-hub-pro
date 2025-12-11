@@ -31,6 +31,13 @@ import {
   Box,
   Container,
   Zap,
+  Calculator,
+  DollarSign,
+  PieChart,
+  Anchor,
+  Shield,
+  ArrowLeftRight,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,6 +50,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { icon: Activity, label: "Command Center", path: "/command-center" },
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   {
     icon: Truck,
@@ -71,12 +79,48 @@ const navItems: NavItem[] = [
     label: "Logistics",
     path: "/logistics",
     children: [
-      { icon: Box, label: "Shipments", path: "/logistics/shipments" },
-      { icon: FileText, label: "Bills of Lading", path: "/logistics/manifests" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/logistics" },
+      { icon: Box, label: "All Shipments", path: "/logistics/shipments" },
+      { icon: Package, label: "Create Shipment", path: "/logistics/create" },
+      { icon: FileText, label: "Logistics Manifests", path: "/logistics/manifests" },
       { icon: UserCheck, label: "Proof of Delivery", path: "/logistics/pod" },
       { icon: Container, label: "Empty Containers", path: "/logistics/containers" },
       { icon: Zap, label: "AI Optimizer", path: "/logistics/ai-optimizer" },
-      { icon: Package, label: "Create Shipment", path: "/logistics/create" },
+    ],
+  },
+
+  {
+    icon: Anchor,
+    label: "Clearance", // Kept 'Clearance' as is, assuming user wants Customs separate from specific Clearance if needed, or maybe merge Customs/Clearance? 
+    // Wait, user said "Customs and Warehousing". There is currently "Clearance" AND "Customs".
+    // I will check the existing structure again.
+    // Existing:
+    // - Logistics
+    // - Clearance (Dashboard, New Job, Duty Est, Landed Cost, Bonded Warehouse)
+    // - Customers
+    // - Analytics
+    // - Customs (Consignments, Warehouses, HS Codes, Clearance Dash, New Job, Duty Calc, Auctions)
+
+    // It seems "Customs" and "Clearance" are duplicates or "Clearance" is a subset.
+    // I will promote "Warehousing" as requested.
+
+    path: "/clearance",
+    children: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/clearance" },
+      { icon: FileText, label: "New Job", path: "/clearance/new" },
+      { icon: Calculator, label: "Duty Estimator", path: "/customs/calculator" },
+      { icon: DollarSign, label: "Landed Cost", path: "/finance/landed-cost" },
+    ],
+  },
+  {
+    icon: Warehouse,
+    label: "Warehousing",
+    path: "/warehousing",
+    children: [
+      { icon: LayoutDashboard, label: "Overview", path: "/warehousing" },
+      { icon: Box, label: "Inventory", path: "/warehousing/inventory" },
+      { icon: ArrowLeftRight, label: "Gate Passes", path: "/warehousing" },
+      { icon: ScrollText, label: "Reports", path: "/warehousing/reports" },
     ],
   },
   {
@@ -91,13 +135,15 @@ const navItems: NavItem[] = [
   },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   {
-    icon: Warehouse,
+    icon: Gavel, // Changed icon to distinguish from Warehousing
     label: "Customs",
     path: "/customs",
     children: [
       { icon: Package, label: "Consignments", path: "/customs/consignments" },
-      { icon: Warehouse, label: "Warehouses", path: "/customs/warehouses" },
       { icon: ScrollText, label: "HS Codes", path: "/customs/hs-codes" },
+      { icon: LayoutDashboard, label: "Clearance Dashboard", path: "/clearance" },
+      { icon: FileText, label: "New Clearance Job", path: "/clearance/new" },
+      { icon: Calculator, label: "Duty Calculator", path: "/customs/calculator" },
       { icon: Gavel, label: "Auctions", path: "/customs/auctions" },
     ],
   },
@@ -111,8 +157,9 @@ const navItems: NavItem[] = [
       { icon: ScrollText, label: "Bills (AP)", path: "/finance/bills" },
       { icon: Truck, label: "Driver Settlements", path: "/finance/settlements" },
       { icon: Fuel, label: "Fleet Costs", path: "/finance/fleet-costs" },
-      { icon: BarChart3, label: "Cost Estimator", path: "/finance/cost-estimator" },
-      { icon: FileText, label: "Reports", path: "/finance/reports" },
+      { icon: Calculator, label: "Job Costing", path: "/finance/cost-estimator" },
+      { icon: DollarSign, label: "Landed Cost", path: "/finance/landed-cost" },
+      { icon: PieChart, label: "Reports", path: "/finance/reports" },
     ],
   },
   {
@@ -132,14 +179,16 @@ const navItems: NavItem[] = [
     children: [
       { icon: Building2, label: "Company", path: "/settings/company" },
       { icon: Bell, label: "Notifications", path: "/settings/notifications" },
+      { icon: Bell, label: "Notifications", path: "/settings/notifications" },
       { icon: Map, label: "Service Areas", path: "/settings/areas" },
+      { icon: Shield, label: "Roles & Permissions", path: "/settings/roles" },
     ],
   },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Fleet", "Orders"]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(["Fleet", "Orders", "Logistics"]);
   const location = useLocation();
 
   const toggleExpanded = (label: string) => {

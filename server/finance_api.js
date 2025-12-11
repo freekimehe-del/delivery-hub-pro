@@ -5,8 +5,11 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+// Prefer secure backend env vars first. Never expose service role to the client.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // server-only
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = supabaseServiceKey || supabaseAnonKey;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // =====================================================
@@ -555,7 +558,12 @@ async function processDriverSettlement(req, res) {
     };
 
     // Insert Bill mock
+    await supabase.from('bills').insert(settlementBill);
 
+    res.json({ ok: true, message: 'Settlement Processed. Bill generated.', bill: settlementBill });
+}
+
+/*
     async function getJournalEntries(req, res) {
         if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
@@ -640,6 +648,70 @@ async function processDriverSettlement(req, res) {
     // =====================================================
     // REPORTS
     // =====================================================
+
+    async function getProfitLoss(req, res) {
+        if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+        // Default to current year
+        const fromDate = req.query.from || `${new Date().getFullYear()}-01-01`;
+        const toDate = req.query.to || new Date().toISOString().split('T')[0];
+
+        try {
+            // Fetch Revenue and Expense accounts
+            const { data: accounts } = await supabase
+                .from('chart_of_accounts')
+                .select('*')
+                .in('account_type', ['Revenue', 'Expense']);
+
+            // For each account, get sum of credits - sum of debits (for Revenue) or Debits - Credits (for Expenses)
+            // Ideally this is a complex SQL join, but for simplicity/mock we calculate via JS or fetch lines
+            // Mocking the result for now until we have real GL data
+
+            const report = {
+                revenue: [
+                    { id: '1', account_name: 'Freight Revenue', amount: 1500000 },
+                    { id: '2', account_name: 'Customs Clearance Fees', amount: 250000 },
+                    { id: '3', account_name: 'Warehouse Storage Fees', amount: 120000 }
+                ],
+                expense: [
+                    { id: '4', account_name: 'Fuel Expense', amount: 450000 },
+                    { id: '5', account_name: 'Driver Wages', amount: 300000 },
+                    { id: '6', account_name: 'Vehicle Maintenance', amount: 150000 },
+                    { id: '7', account_name: 'Port Handling Charges', amount: 80000 }
+                ]
+            };
+
+            const totalRevenue = report.revenue.reduce((s, i) => s + i.amount, 0);
+            const totalExpense = report.expense.reduce((s, i) => s + i.amount, 0);
+            const netProfit = totalRevenue - totalExpense;
+
+            res.json({ fromDate, toDate, report, summary: { totalRevenue, totalExpense, netProfit } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async function getBalanceSheet(req, res) {
+        if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+        const asOfDate = req.query.date || new Date().toISOString().split('T')[0];
+
+        // Mock Balance Sheet
+        const report = {
+            assets: [
+                { category: 'Current Assets', accounts: [{ name: 'Cash', amount: 500000 }, { name: 'Accounts Receivable', amount: 1200000 }, { name: 'Bank - HBL', amount: 3500000 }] },
+                { category: 'Fixed Assets', accounts: [{ name: 'Fleet Vehicles', amount: 15000000 }, { name: 'Office Equipment', amount: 500000 }] }
+            ],
+            liabilities: [
+                { category: 'Current Liabilities', accounts: [{ name: 'Accounts Payable', amount: 850000 }, { name: 'Tax Payable', amount: 120000 }] },
+                { category: 'Long Term Liabilities', accounts: [{ name: 'Bank Loan', amount: 5000000 }] }
+            ],
+            equity: [
+                { category: 'Equity', accounts: [{ name: 'Share Capital', amount: 10000000 }, { name: 'Retained Earnings', amount: 4730000 }] }
+            ]
+        };
+
+        res.json({ asOfDate, report });
+    }
 
     async function getDashboardMetrics(req, res) {
         if (!supabase) return res.status(500).json({ error: 'Database not configured' });
@@ -867,25 +939,94 @@ async function processDriverSettlement(req, res) {
         });
     }
 
-    module.exports = {
-        getInvoices,
-        getUnbilledShipments,
-        getCustomers,
-        getVendors,
-        createInvoice,
-        createInvoiceInternal,
-        updateInvoiceStatus,
-        getBills,
-        createBill,
-        getPayments,
-        recordPayment,
-        getChartOfAccounts,
-        getJournalEntries,
-        createJournalEntry,
-        getDashboardMetrics,
-        getDriverSettlements,
-        processDriverSettlement,
-        getFleetCosts,
-        recordFleetCost,
-        estimateShipmentCost
-    };
+    */
+
+// Reinstate Reports at top-level (no DB required)
+async function getProfitLoss(req, res) {
+  // Default to current year
+  const fromDate = req.query?.from || `${new Date().getFullYear()}-01-01`;
+  const toDate = req.query?.to || new Date().toISOString().split('T')[0];
+
+  // Mock P&L report
+  const report = {
+    revenue: [
+      { id: '1', account_name: 'Freight Revenue', amount: 1500000 },
+      { id: '2', account_name: 'Customs Clearance Fees', amount: 250000 },
+      { id: '3', account_name: 'Warehouse Storage Fees', amount: 120000 },
+    ],
+    expense: [
+      { id: '4', account_name: 'Fuel Expense', amount: 450000 },
+      { id: '5', account_name: 'Driver Wages', amount: 300000 },
+      { id: '6', account_name: 'Vehicle Maintenance', amount: 150000 },
+      { id: '7', account_name: 'Port Handling Charges', amount: 80000 },
+    ],
+  };
+
+  const totalRevenue = report.revenue.reduce((s, i) => s + i.amount, 0);
+  const totalExpense = report.expense.reduce((s, i) => s + i.amount, 0);
+  const netProfit = totalRevenue - totalExpense;
+
+  return res.json({ fromDate, toDate, report, summary: { totalRevenue, totalExpense, netProfit } });
+}
+
+async function getBalanceSheet(req, res) {
+  const asOfDate = req.query?.date || new Date().toISOString().split('T')[0];
+
+  // Mock Balance Sheet
+  const report = {
+    assets: [
+      { category: 'Current Assets', accounts: [
+        { name: 'Cash', amount: 500000 },
+        { name: 'Accounts Receivable', amount: 1200000 },
+        { name: 'Bank - HBL', amount: 3500000 },
+      ]},
+      { category: 'Fixed Assets', accounts: [
+        { name: 'Fleet Vehicles', amount: 15000000 },
+        { name: 'Office Equipment', amount: 500000 },
+      ]},
+    ],
+    liabilities: [
+      { category: 'Current Liabilities', accounts: [
+        { name: 'Accounts Payable', amount: 850000 },
+        { name: 'Tax Payable', amount: 120000 },
+      ]},
+      { category: 'Long Term Liabilities', accounts: [
+        { name: 'Bank Loan', amount: 5000000 },
+      ]},
+    ],
+    equity: [
+      { category: 'Equity', accounts: [
+        { name: 'Share Capital', amount: 10000000 },
+        { name: 'Retained Earnings', amount: 4730000 },
+      ]},
+    ],
+  };
+
+  return res.json({ asOfDate, report });
+}
+
+module.exports = {
+  getInvoices,
+  getUnbilledShipments,
+  getCustomers,
+  getVendors,
+  createInvoice,
+  createInvoiceInternal,
+  updateInvoiceStatus,
+  getBills,
+  createBill,
+  getPayments,
+  recordPayment,
+  getChartOfAccounts,
+  getJournalEntries,
+  createJournalEntry,
+  getDashboardMetrics,
+  getDriverSettlements,
+  processDriverSettlement,
+  // The following were part of a duplicated nested block and are intentionally omitted until reintroduced:
+  // getFleetCosts,
+  // recordFleetCost,
+  // estimateShipmentCost,
+  getProfitLoss,
+  getBalanceSheet,
+};

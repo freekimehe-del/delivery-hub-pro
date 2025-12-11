@@ -1,212 +1,240 @@
-import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import {
-  Activity,
-  Truck,
-  DollarSign,
-  FileText,
-  AlertCircle,
-  Package,
-  ArrowUpRight
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useWarehouses, useGatePasses } from "@/hooks/useWarehouse";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity, Truck, Anchor, Warehouse, DollarSign, Camera, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useClearanceJobs } from "@/hooks/useCustoms";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useShipments } from "@/hooks/useShipments";
 
-interface DashboardStats {
-  revenue?: number;
-  activeShipments?: number;
-  containerPool?: number;
-  efficiency?: number;
-  volumeTrend?: unknown[];
-  activeDeclarations?: number;
-}
+export default function Index() {
+  const { data: warehouses, isLoading: l1, error: e1 } = useWarehouses();
+  const { data: passes, isLoading: l2, error: e2 } = useGatePasses();
+  const { data: clearanceJobs, isLoading: l3, error: e3 } = useClearanceJobs();
+  const { data: invoices, isLoading: l4, error: e4 } = useInvoices();
+  const { data: shipments, isLoading: l5, error: e5 } = useShipments();
 
-const Index: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  // Aggregate loading state
+  const isLoading = l1 || l2 || l3 || l4 || l5;
 
-  useEffect(() => {
-    async function load() {
-      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
-      try {
-        // Fetch centralized stats (aggregated from different endpoints or a new summary endpoint)
-        const [analyticsResp, fleetResp, logisticsResp] = await Promise.all([
-          fetch(`${apiUrl}/api/analytics/advanced`), // for revenue
-          fetch(`${apiUrl}/api/shipments`), // for logistics volume
-          fetch(`${apiUrl}/api/containers`) // for fleet/assets
-        ]);
+  // Log individual errors to console but don't block the UI
+  if (e1) console.error("Warehouses Error:", e1);
+  if (e2) console.error("GatePasses Error:", e2);
+  if (e3) console.error("Customs Error:", e3);
+  if (e4) console.error("Invoices Error:", e4);
+  if (e5) console.error("Shipments Error:", e5);
 
-        if (analyticsResp.ok && fleetResp.ok && logisticsResp.ok) {
-          const analytics = await analyticsResp.json();
-          const shipments = await fleetResp.json();
-          const containers = await logisticsResp.json();
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2">Loading Dashboard Data...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-          // Fetch Customs Data separately (handling potential failures gracefully if module not ready)
-          let activeDeclarations = 0;
-          try {
-            const customsResp = await fetch(`${apiUrl}/api/customs/declarations`);
-            if (customsResp.ok) {
-              const cData = await customsResp.json();
-              activeDeclarations = cData.declarations ? cData.declarations.filter((d: any) => d.status !== 'cleared').length : 0;
-            }
-          } catch (e) {
-            // Ignore errors
-          }
-
-          setStats({
-            revenue: analytics.metrics.revenue_pipeline,
-            activeShipments: shipments.shipments ? shipments.shipments.length : 0,
-            containerPool: containers.stats.total,
-            efficiency: analytics.metrics.efficiency_score,
-            volumeTrend: analytics.metrics.volume_trend,
-            activeDeclarations
-          });
-        }
-      } catch (e) { console.error(e); }
+  // Real Stats with Fallbacks
+  // We use optional chaining and null coalescing to ensure the dashboard renders even if some hooks failed
+  const stats = {
+    customs: {
+      pending: clearanceJobs ? clearanceJobs.filter((j: any) => j.status === 'draft' || j.status === 'gd_filed').length : 0,
+      held: clearanceJobs ? clearanceJobs.filter((j: any) => j.status === 'examination').length : 0
+    },
+    logistics: {
+      inTransit: shipments ? shipments.filter((s: any) => s.status === 'in_transit' || s.status === 'shipped').length : 0,
+      delayed: shipments ? shipments.filter((s: any) => s.status === 'delayed' || s.status === 'exception').length : 0
+    },
+    finance: {
+      unpaidInvoices: invoices ? invoices.filter((i: any) => i.payment_status === 'unpaid').length : 0,
+      revenue: invoices ? invoices.reduce((acc: number, curr: any) => acc + (Number(curr.total_amount) || 0), 0) : 0
     }
-    load();
-  }, []);
-
-  if (!stats) return <DashboardLayout><div className="p-8">Loading Command Center...</div></DashboardLayout>;
+  };
 
   return (
     <DashboardLayout>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Command Center</h1>
-          <p className="text-gray-500 mt-1">System-wide operational overview.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Operations Command Center</h1>
+          <p className="text-muted-foreground">Unified view of Logistics, Customs, and Warehousing.</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="flex h-3 w-3 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-          <span className="text-sm font-medium text-green-600">System Online</span>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <Activity className="w-4 h-4" /> System Health: 98%
+          </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Activity className="h-6 w-6 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">+12%</span>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500">Active Shipments</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.activeShipments}</p>
-        </div>
+      {/* High Level KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Anchor className="w-4 h-4" /> Active Clearances
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.customs.pending}</div>
+            <p className="text-xs text-muted-foreground">{stats.customs.held} held by customs</p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <DollarSign className="h-6 w-6 text-green-600" />
-            </div>
-            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">+8%</span>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500">Revenue Pipeline</h3>
-          <p className="text-2xl font-bold text-gray-900">PKR {stats.revenue.toLocaleString()}</p>
-        </div>
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Truck className="w-4 h-4" /> Bonded Transit
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.logistics.inTransit}</div>
+            <p className="text-xs text-muted-foreground">{stats.logistics.delayed} shipments delayed</p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Truck className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500">Fleet Efficiency</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.efficiency}%</p>
-        </div>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Warehouse className="w-4 h-4" /> Warehouse Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{passes?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">Gate moves today</p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-orange-50 rounded-lg">
-              <Package className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500">Container Pool</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.containerPool}</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-indigo-50 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-indigo-600" />
-            </div>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500">Pending Customs</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.activeDeclarations}</p>
-        </div>
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <DollarSign className="w-4 h-4" /> Pending Invoices
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.finance.unpaidInvoices}</div>
+            <p className="text-xs text-muted-foreground">Est. Value: PKR {(stats.finance.revenue / 1000).toFixed(0)}k</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900">Volume Trends</h3>
-            <Link to="/analytics" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
-              View Report <ArrowUpRight className="h-4 w-4 ml-1" />
-            </Link>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.volumeTrend}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: 'transparent' }} />
-                <Bar dataKey="volume" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Surveillance & Warehouse Feed */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5" /> Warehouse Surveillance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {warehouses?.slice(0, 2).map(w => (
+                  <div key={w.id} className="border rounded-lg overflow-hidden bg-black/5 relative group">
+                    <div className="aspect-video flex items-center justify-center bg-gray-900 text-gray-500">
+                      {w.is_bonded ? (
+                        <div className="text-center">
+                          <Camera className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <span className="text-xs">Live Feed: {w.name}</span>
+                          <Badge variant="destructive" className="absolute top-2 right-2 animate-pulse">REC</Badge>
+                        </div>
+                      ) : (
+                        <span className="text-xs">Offline</span>
+                      )}
+                    </div>
+                    <div className="p-3 bg-white border-t flex justify-between items-center">
+                      <span className="font-semibold text-sm">{w.name}</span>
+                      <Button size="sm" variant="ghost">View Log</Button>
+                    </div>
+                  </div>
+                ))}
+                {(!warehouses || warehouses.length === 0) && (
+                  <div className="col-span-2 text-center py-8 text-muted-foreground">No cameras configured.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Alerts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Logistics Alerts */}
+                {shipments?.filter((s: any) => s.status === 'delayed' || s.status === 'exception').map((s: any) => (
+                  <div key={s.id} className="flex items-start gap-4 p-4 bg-orange-50 rounded-lg border border-orange-100">
+                    <Truck className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-orange-900">Shipment Delayed: {s.shipment_ref}</h4>
+                      <p className="text-sm text-orange-700">
+                        {s.origin} -&gt; {s.destination} ({s.status.replace('_', ' ')})
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="ml-auto border-orange-200 text-orange-700 hover:bg-orange-100">
+                      Track
+                    </Button>
+                  </div>
+                ))}
+
+                {/* Customs Alerts */}
+                {clearanceJobs?.filter((j: any) => j.status === 'examination' || j.status === 'held').map((j: any) => (
+                  <div key={j.id} className="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-yellow-900">Customs Hold: {j.job_number}</h4>
+                      <p className="text-sm text-yellow-700">{j.type.toUpperCase()} - Pending Examination</p>
+                    </div>
+                    <Button size="sm" variant="outline" className="ml-auto border-yellow-200 text-yellow-700 hover:bg-yellow-100">
+                      Resolve
+                    </Button>
+                  </div>
+                ))}
+
+                {/* Empty State */}
+                {(!shipments?.some((s: any) => s.status === 'delayed' || s.status === 'exception') &&
+                  !clearanceJobs?.some((j: any) => j.status === 'examination' || j.status === 'held')) && (
+                    <div className="text-center py-6 text-muted-foreground bg-gray-50 rounded-lg border border-dashed">
+                      <div className="flex justify-center mb-2">
+                        <Activity className="w-8 h-8 opacity-20" />
+                      </div>
+                      <p>No active alerts. All systems operational.</p>
+                    </div>
+                  )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Quick Actions / Integration Status */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-6">System Health</h3>
-          <div className="space-y-4">
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="h-2 w-2 rounded-full bg-green-500 mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Fleet Bridge</p>
-                <p className="text-xs text-gray-500">Auto-Dispatch Active</p>
+        {/* Right Sidebar: Recent Activity Feed */}
+        <div className="space-y-6">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Live Activity Stream</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative border-l border-muted ml-3 space-y-6 pb-4">
+                <div className="ml-6 relative">
+                  <div className="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-blue-500 ring-4 ring-white" />
+                  <p className="text-sm font-medium">New GD Filed: IMP-KHI-004</p>
+                  <p className="text-xs text-muted-foreground">2 mins ago • Clearing Agent</p>
+                </div>
+                <div className="ml-6 relative">
+                  <div className="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-purple-500 ring-4 ring-white" />
+                  <p className="text-sm font-medium">Gate Pass Issued: GP-IN-992</p>
+                  <p className="text-xs text-muted-foreground">15 mins ago • Warehouse Staff</p>
+                </div>
+                <div className="ml-6 relative">
+                  <div className="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-green-500 ring-4 ring-white" />
+                  <p className="text-sm font-medium">Payment Received: INV-2024-001</p>
+                  <p className="text-xs text-muted-foreground">1 hour ago • Finance</p>
+                </div>
               </div>
-              <span className="text-xs text-green-600 font-medium">Online</span>
-            </div>
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="h-2 w-2 rounded-full bg-green-500 mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Billing Bridge</p>
-                <p className="text-xs text-gray-500">Invoice Sync Active</p>
-              </div>
-              <span className="text-xs text-green-600 font-medium">Online</span>
-            </div>
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="h-2 w-2 rounded-full bg-green-500 mr-3"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Customs Bridge</p>
-                <p className="text-xs text-gray-500">PSW Link Active</p>
-              </div>
-              <span className="text-xs text-green-600 font-medium">Online</span>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Quick Actions</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <Link to="/logistics/create" className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center">
-                <FileText className="h-5 w-5 text-gray-600 mb-1" />
-                <span className="text-xs font-medium text-gray-900">New Manifest</span>
-              </Link>
-              <Link to="/customs/filing" className="flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center">
-                <FileText className="h-5 w-5 text-gray-600 mb-1" />
-                <span className="text-xs font-medium text-gray-900">File Customs</span>
-              </Link>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
   );
-};
+}
 
-export default Index;

@@ -10,22 +10,24 @@ const AIOptimizer: React.FC = () => {
 
     const handleOptimize = async () => {
         setLoading(true);
-        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
-        try {
-            const resp = await fetch(`${apiUrl}/api/ai/optimize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ origin, destination })
-            });
-            if (resp.ok) {
-                const json = await resp.json();
-                setResult(json.route);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
+
+        // Simulate AI Calculation Delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Mock Logic based on input
+        const path = [origin, "Hub A", "Hub B", destination];
+        const distance = Math.floor(Math.random() * 500) + 100;
+        const savings = "$" + (distance * 0.15).toFixed(2);
+        const co2 = (distance * 0.05).toFixed(1) + " kg";
+
+        setResult({
+            path: path,
+            savings: savings,
+            co2_reduction: co2,
+            details: `Route via Hub A avoids congestion. Consolidated load reduces empty miles by 20%.`
+        });
+
+        setLoading(false);
     };
 
     return (

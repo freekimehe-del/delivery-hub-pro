@@ -32,63 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const invoices = [
-  {
-    id: "INV-001",
-    customer: "Acme Corporation",
-    amount: 4580,
-    date: "2024-01-15",
-    dueDate: "2024-02-15",
-    status: "paid" as const,
-  },
-  {
-    id: "INV-002",
-    customer: "Tech Solutions Inc.",
-    amount: 2340,
-    date: "2024-01-14",
-    dueDate: "2024-02-14",
-    status: "pending" as const,
-  },
-  {
-    id: "INV-003",
-    customer: "Global Imports LLC",
-    amount: 7890,
-    date: "2024-01-13",
-    dueDate: "2024-02-13",
-    status: "overdue" as const,
-  },
-  {
-    id: "INV-004",
-    customer: "Quick Retail Co.",
-    amount: 1520,
-    date: "2024-01-12",
-    dueDate: "2024-02-12",
-    status: "paid" as const,
-  },
-  {
-    id: "INV-005",
-    customer: "Fresh Foods Market",
-    amount: 9850,
-    date: "2024-01-11",
-    dueDate: "2024-02-11",
-    status: "draft" as const,
-  },
-  {
-    id: "INV-006",
-    customer: "Metro Logistics",
-    amount: 3200,
-    date: "2024-01-10",
-    dueDate: "2024-02-10",
-    status: "sent" as const,
-  },
-];
-
-const invoiceStats = [
-  { label: "Total Invoiced", value: "PKR 284,500", color: "text-foreground" },
-  { label: "Paid", value: "PKR 198,200", color: "text-green-600" },
-  { label: "Pending", value: "PKR 54,300", color: "text-yellow-600" },
-  { label: "Overdue", value: "PKR 32,000", color: "text-red-600" },
-];
+import { useInvoices } from "@/hooks/useInvoices";
 
 const statusConfig = {
   paid: { label: "Paid", color: "bg-green-500/10 text-green-600" },
@@ -100,12 +44,25 @@ const statusConfig = {
 
 export function InvoicesTab() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: invoices, isLoading } = useInvoices();
 
-  const filteredInvoices = invoices.filter(
+  const filteredInvoices = invoices?.filter(
     (invoice) =>
       invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.customer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      (invoice.customer?.name && invoice.customer.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) || [];
+
+  const totalInvoiced = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+  const paidAmount = invoices?.filter(i => i.status === 'paid').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+  const pendingAmount = invoices?.filter(i => i.status === 'pending').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+  const overdueAmount = invoices?.filter(i => i.status === 'overdue').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+
+  const invoiceStats = [
+    { label: "Total Invoiced", value: `PKR ${totalInvoiced.toLocaleString()}`, color: "text-foreground" },
+    { label: "Paid", value: `PKR ${paidAmount.toLocaleString()}`, color: "text-green-600" },
+    { label: "Pending", value: `PKR ${pendingAmount.toLocaleString()}`, color: "text-yellow-600" },
+    { label: "Overdue", value: `PKR ${overdueAmount.toLocaleString()}`, color: "text-red-600" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -145,7 +102,7 @@ export function InvoicesTab() {
               <div>
                 <h3 className="font-semibold">Invoices</h3>
                 <p className="text-xs text-muted-foreground">
-                  {invoices.length} invoices total
+                  {invoices?.length || 0} invoices total
                 </p>
               </div>
             </div>
@@ -196,19 +153,19 @@ export function InvoicesTab() {
                   <TableCell className="font-mono font-medium">
                     {invoice.id}
                   </TableCell>
-                  <TableCell>{invoice.customer}</TableCell>
+                  <TableCell>{invoice.customer?.name || "Unknown"}</TableCell>
                   <TableCell className="font-mono font-medium">
-                    {formatCurrency(invoice.amount)}
+                    {formatCurrency(Number(invoice.amount))}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(invoice.date).toLocaleDateString()}
+                    {new Date(invoice.issue_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(invoice.dueDate).toLocaleDateString()}
+                    {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : "-"}
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusConfig[invoice.status].color}>
-                      {statusConfig[invoice.status].label}
+                    <Badge className={statusConfig[invoice.status as keyof typeof statusConfig]?.color || "bg-muted"}>
+                      {statusConfig[invoice.status as keyof typeof statusConfig]?.label || invoice.status}
                     </Badge>
                   </TableCell>
                   <TableCell>

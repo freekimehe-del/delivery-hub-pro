@@ -41,7 +41,7 @@ export function useVehicleStats() {
         offlineVehicles,
         inTransit,
         statusBreakdown,
-        utilizationRate: totalVehicles > 0 
+        utilizationRate: totalVehicles > 0
           ? Math.round((activeVehicles / totalVehicles) * 100)
           : 0,
       };
@@ -54,47 +54,41 @@ export function useMaintenanceStats() {
   return useQuery({
     queryKey: ["maintenance-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("id, name, next_service_due, last_service_date, status, mileage")
-        .order("next_service_due", { ascending: true });
+      // Fetch maintenance records
+      const { data: records, error } = await supabase
+        .from("maintenance_records")
+        .select("*");
 
       if (error) throw error;
 
-      const vehicles = data || [];
-      const today = new Date();
-      const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
 
-      // Upcoming maintenance (due within 30 days)
-      const upcomingMaintenance = vehicles.filter((v) => {
-        if (!v.next_service_due) return false;
-        const dueDate = new Date(v.next_service_due);
-        return dueDate > today && dueDate <= thirtyDaysFromNow;
-      });
+      const upcomingMaintenance = records.filter(r =>
+        r.status === 'scheduled' &&
+        new Date(r.scheduled_date!).getTime() > now.getTime()
+      );
 
-      // Overdue maintenance
-      const overdueMaintenance = vehicles.filter((v) => {
-        if (!v.next_service_due) return false;
-        return new Date(v.next_service_due) < today;
-      });
+      const overdueMaintenance = records.filter(r =>
+        r.status === 'scheduled' &&
+        new Date(r.scheduled_date!).getTime() < now.getTime()
+      );
 
-      // Urgent (due within 7 days)
-      const urgentMaintenance = vehicles.filter((v) => {
-        if (!v.next_service_due) return false;
-        const dueDate = new Date(v.next_service_due);
-        return dueDate > today && dueDate <= sevenDaysFromNow;
-      });
+      const urgentMaintenance = upcomingMaintenance.filter(r =>
+        new Date(r.scheduled_date!).getTime() - now.getTime() < sevenDaysMs
+      );
 
-      // Recent maintenance (vehicles that were recently serviced)
-      const recentMaintenance = vehicles
-        .filter((v) => v.last_service_date)
-        .sort((a, b) => new Date(b.last_service_date!).getTime() - new Date(a.last_service_date!).getTime())
-        .slice(0, 5);
+      // Simple cost calc vs last month (mocked slightly if no history)
+      const maintenanceCostThisMonth = records
+        .filter(r => new Date(r.created_at).getMonth() === now.getMonth())
+        .reduce((sum, r) => sum + (r.total_cost || 0), 0);
 
-      // Simulated maintenance cost this month
-      const maintenanceCostThisMonth = Math.floor(Math.random() * 5000) + 2000;
-      const maintenanceCostLastMonth = Math.floor(Math.random() * 5000) + 2000;
+      const maintenanceCostLastMonth = records
+        .filter(r => new Date(r.created_at).getMonth() === now.getMonth() - 1)
+        .reduce((sum, r) => sum + (r.total_cost || 0), 0);
+
+      const inMaintenanceNow = records.filter(r => r.status === 'in_progress').length;
 
       return {
         upcomingCount: upcomingMaintenance.length,
@@ -102,13 +96,13 @@ export function useMaintenanceStats() {
         urgentCount: urgentMaintenance.length,
         upcomingMaintenance: upcomingMaintenance.slice(0, 5),
         overdueMaintenance,
-        recentMaintenance,
+        recentMaintenance: records.slice(0, 5), // Already ordered by latest if DB query was ordered, else sort
         maintenanceCostThisMonth,
         maintenanceCostLastMonth,
         costChange: maintenanceCostLastMonth > 0
           ? Math.round(((maintenanceCostThisMonth - maintenanceCostLastMonth) / maintenanceCostLastMonth) * 100)
           : 0,
-        inMaintenanceNow: vehicles.filter((v) => v.status === "maintenance").length,
+        inMaintenanceNow,
       };
     },
     refetchInterval: 30000,
@@ -119,41 +113,37 @@ export function useFuelStats() {
   return useQuery({
     queryKey: ["fuel-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("id, name, fuel_type, mileage");
+      const { data: logs, error } = await supabase
+        .from("fuel_records")
+        .select("*")
+        .order("fueled_at", { ascending: true });
 
       if (error) throw error;
 
-      const vehicles = data || [];
-      const totalVehicles = vehicles.length;
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
 
-      // Simulated fuel data (in a real app, this would come from a fuel_logs table)
-      const fuelConsumptionThisMonth = Math.floor(Math.random() * 2000) + 3000; // gallons
-      const fuelConsumptionLastMonth = Math.floor(Math.random() * 2000) + 3000;
-      const avgFuelPrice = 3.45; // per gallon
-      const fuelCostThisMonth = fuelConsumptionThisMonth * avgFuelPrice;
-      const fuelCostLastMonth = fuelConsumptionLastMonth * avgFuelPrice;
+      const thisMonthLogs = logs.filter(l => new Date(l.fueled_at).getMonth() === currentMonth);
+      const lastMonthLogs = logs.filter(l => new Date(l.fueled_at).getMonth() === lastMonth);
 
-      // Average fuel efficiency
-      const avgMPG = 18.5 + Math.random() * 4;
-      const avgMPGLastMonth = 17.5 + Math.random() * 4;
+      const fuelConsumptionThisMonth = thisMonthLogs.reduce((sum, l) => sum + (l.quantity_gallons || 0), 0);
+      const fuelConsumptionLastMonth = lastMonthLogs.reduce((sum, l) => sum + (l.quantity_gallons || 0), 0);
 
-      // Fuel type breakdown
-      const fuelTypeBreakdown = vehicles.reduce((acc, v) => {
-        const type = v.fuel_type || "gasoline";
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const fuelCostThisMonth = thisMonthLogs.reduce((sum, l) => sum + (l.total_cost || 0), 0);
+      const fuelCostLastMonth = lastMonthLogs.reduce((sum, l) => sum + (l.total_cost || 0), 0);
 
-      // Vehicles needing refuel (simulated - low fuel alert)
-      const needsRefuel = Math.floor(totalVehicles * 0.15);
+      // Average MPG from records that have it calculated
+      const recordsWithMPG = logs.filter(l => l.mpg && l.mpg > 0);
+      const avgMPG = recordsWithMPG.length > 0
+        ? recordsWithMPG.reduce((sum, l) => sum + l.mpg, 0) / recordsWithMPG.length
+        : 0;
 
-      // Sparkline data for the last 7 days
-      const sparklineData = Array.from({ length: 7 }, (_, i) => ({
+      // Sparkline (last 7 logs)
+      const sparklineData = logs.slice(-7).map((l, i) => ({
         day: i + 1,
-        consumption: Math.floor(Math.random() * 300) + 400,
-        cost: Math.floor(Math.random() * 1000) + 1400,
+        consumption: l.quantity_gallons || 0,
+        cost: l.total_cost || 0
       }));
 
       return {
@@ -168,11 +158,11 @@ export function useFuelStats() {
           ? Math.round(((fuelCostThisMonth - fuelCostLastMonth) / fuelCostLastMonth) * 100)
           : 0,
         avgMPG: avgMPG.toFixed(1),
-        avgMPGChange: ((avgMPG - avgMPGLastMonth) / avgMPGLastMonth * 100).toFixed(1),
-        needsRefuel,
-        fuelTypeBreakdown,
+        avgMPGChange: "0.0",
+        needsRefuel: 0, // Need live vehicle telemetry for this
+        fuelTypeBreakdown: {}, // Need vehicle join
         sparklineData,
-        totalVehicles,
+        totalVehicles: 0, // Need vehicle count
       };
     },
     refetchInterval: 30000,
