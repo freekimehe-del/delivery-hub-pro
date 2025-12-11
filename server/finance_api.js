@@ -943,90 +943,151 @@ async function processDriverSettlement(req, res) {
 
 // Reinstate Reports at top-level (no DB required)
 async function getProfitLoss(req, res) {
-  // Default to current year
-  const fromDate = req.query?.from || `${new Date().getFullYear()}-01-01`;
-  const toDate = req.query?.to || new Date().toISOString().split('T')[0];
+    // Default to current year
+    const fromDate = req.query?.from || `${new Date().getFullYear()}-01-01`;
+    const toDate = req.query?.to || new Date().toISOString().split('T')[0];
 
-  // Mock P&L report
-  const report = {
-    revenue: [
-      { id: '1', account_name: 'Freight Revenue', amount: 1500000 },
-      { id: '2', account_name: 'Customs Clearance Fees', amount: 250000 },
-      { id: '3', account_name: 'Warehouse Storage Fees', amount: 120000 },
-    ],
-    expense: [
-      { id: '4', account_name: 'Fuel Expense', amount: 450000 },
-      { id: '5', account_name: 'Driver Wages', amount: 300000 },
-      { id: '6', account_name: 'Vehicle Maintenance', amount: 150000 },
-      { id: '7', account_name: 'Port Handling Charges', amount: 80000 },
-    ],
-  };
+    // Mock P&L report
+    const report = {
+        revenue: [
+            { id: '1', account_name: 'Freight Revenue', amount: 1500000 },
+            { id: '2', account_name: 'Customs Clearance Fees', amount: 250000 },
+            { id: '3', account_name: 'Warehouse Storage Fees', amount: 120000 },
+        ],
+        expense: [
+            { id: '4', account_name: 'Fuel Expense', amount: 450000 },
+            { id: '5', account_name: 'Driver Wages', amount: 300000 },
+            { id: '6', account_name: 'Vehicle Maintenance', amount: 150000 },
+            { id: '7', account_name: 'Port Handling Charges', amount: 80000 },
+        ],
+    };
 
-  const totalRevenue = report.revenue.reduce((s, i) => s + i.amount, 0);
-  const totalExpense = report.expense.reduce((s, i) => s + i.amount, 0);
-  const netProfit = totalRevenue - totalExpense;
+    const totalRevenue = report.revenue.reduce((s, i) => s + i.amount, 0);
+    const totalExpense = report.expense.reduce((s, i) => s + i.amount, 0);
+    const netProfit = totalRevenue - totalExpense;
 
-  return res.json({ fromDate, toDate, report, summary: { totalRevenue, totalExpense, netProfit } });
+    return res.json({ fromDate, toDate, report, summary: { totalRevenue, totalExpense, netProfit } });
 }
 
 async function getBalanceSheet(req, res) {
-  const asOfDate = req.query?.date || new Date().toISOString().split('T')[0];
+    const asOfDate = req.query?.date || new Date().toISOString().split('T')[0];
 
-  // Mock Balance Sheet
-  const report = {
-    assets: [
-      { category: 'Current Assets', accounts: [
-        { name: 'Cash', amount: 500000 },
-        { name: 'Accounts Receivable', amount: 1200000 },
-        { name: 'Bank - HBL', amount: 3500000 },
-      ]},
-      { category: 'Fixed Assets', accounts: [
-        { name: 'Fleet Vehicles', amount: 15000000 },
-        { name: 'Office Equipment', amount: 500000 },
-      ]},
-    ],
-    liabilities: [
-      { category: 'Current Liabilities', accounts: [
-        { name: 'Accounts Payable', amount: 850000 },
-        { name: 'Tax Payable', amount: 120000 },
-      ]},
-      { category: 'Long Term Liabilities', accounts: [
-        { name: 'Bank Loan', amount: 5000000 },
-      ]},
-    ],
-    equity: [
-      { category: 'Equity', accounts: [
-        { name: 'Share Capital', amount: 10000000 },
-        { name: 'Retained Earnings', amount: 4730000 },
-      ]},
-    ],
-  };
+    // Mock Balance Sheet
+    const report = {
+        assets: [
+            {
+                category: 'Current Assets', accounts: [
+                    { name: 'Cash', amount: 500000 },
+                    { name: 'Accounts Receivable', amount: 1200000 },
+                    { name: 'Bank - HBL', amount: 3500000 },
+                ]
+            },
+            {
+                category: 'Fixed Assets', accounts: [
+                    { name: 'Fleet Vehicles', amount: 15000000 },
+                    { name: 'Office Equipment', amount: 500000 },
+                ]
+            },
+        ],
+        liabilities: [
+            {
+                category: 'Current Liabilities', accounts: [
+                    { name: 'Accounts Payable', amount: 850000 },
+                    { name: 'Tax Payable', amount: 120000 },
+                ]
+            },
+            {
+                category: 'Long Term Liabilities', accounts: [
+                    { name: 'Bank Loan', amount: 5000000 },
+                ]
+            },
+        ],
+        equity: [
+            {
+                category: 'Equity', accounts: [
+                    { name: 'Share Capital', amount: 10000000 },
+                    { name: 'Retained Earnings', amount: 4730000 },
+                ]
+            },
+        ],
+    };
 
-  return res.json({ asOfDate, report });
+    return res.json({ asOfDate, report });
 }
 
+// --- Landed Cost (Logistics Link) ---
+
+async function getClearanceJobs(req, res) {
+    const DB = require('./db');
+    // Map declarations to "Clearance Jobs"
+    const jobs = DB.db.customs.declarations.map(d => ({
+        id: d.id,
+        job_number: `JOB-${d.id.substring(d.id.length - 4)}`, // Mock job number
+        bl_number: d.bl_number,
+        importer: d.importer_name,
+        created_at: d.created_at
+    }));
+    res.json({ jobs });
+}
+
+async function getJobItems(req, res) {
+    const DB = require('./db');
+    const { id } = req.params;
+
+    // Find declaration
+    const gd = DB.db.customs.declarations.find(d => d.id === id); // Fix: use id from params
+
+    if (!gd) return res.status(404).json({ error: "Job/GD not found" });
+
+    // Map items
+    const items = gd.items.map((item, idx) => ({
+        id: `item_${idx}`,
+        name: item.description,
+        qty: item.quantity,
+        unit_price: item.unit_value,
+        assessable_value_pkr: (item.quantity * item.unit_value * 278), // Mock ex rate
+        duty_amount: 0 // Ideally this comes from duty calc result if stored
+    }));
+
+    res.json({ items });
+}
+
+async function saveLandedCost(req, res) {
+    const DB = require('./db');
+    const sheet = req.body;
+    sheet.id = `LC-${Date.now()}`;
+    sheet.created_at = new Date().toISOString();
+
+    DB.addLandedCost(sheet);
+    res.json({ success: true, id: sheet.id });
+}
+
+
 module.exports = {
-  getInvoices,
-  getUnbilledShipments,
-  getCustomers,
-  getVendors,
-  createInvoice,
-  createInvoiceInternal,
-  updateInvoiceStatus,
-  getBills,
-  createBill,
-  getPayments,
-  recordPayment,
-  getChartOfAccounts,
-  getJournalEntries,
-  createJournalEntry,
-  getDashboardMetrics,
-  getDriverSettlements,
-  processDriverSettlement,
-  // The following were part of a duplicated nested block and are intentionally omitted until reintroduced:
-  // getFleetCosts,
-  // recordFleetCost,
-  // estimateShipmentCost,
-  getProfitLoss,
-  getBalanceSheet,
+    getInvoices,
+    getUnbilledShipments,
+    getCustomers,
+    getVendors,
+    createInvoice,
+    createInvoiceInternal,
+    updateInvoiceStatus,
+    getBills,
+    createBill,
+    getPayments,
+    recordPayment,
+    getChartOfAccounts,
+    getJournalEntries,
+    createJournalEntry,
+    getDashboardMetrics,
+    getDriverSettlements,
+    processDriverSettlement,
+    // The following were part of a duplicated nested block and are intentionally omitted until reintroduced:
+    // getFleetCosts,
+    // recordFleetCost,
+    // estimateShipmentCost,
+    getProfitLoss,
+    getBalanceSheet,
+    getClearanceJobs,
+    getJobItems,
+    saveLandedCost
 };

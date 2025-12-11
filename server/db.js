@@ -42,6 +42,42 @@ const db = {
     duties: [],
     bonds: [],
     documents: []
+  },
+  finance: {
+    landed_costs: []
+  },
+  imports: {
+    indents: []
+  },
+  exports: {
+    bookings: []
+  },
+  // --- Inventory Management ---
+  inventory: {
+    items: [
+      { id: 'SKU-001', name: 'Wireless Mouse', category: 'Electronics', safety_stock: 50, price: 25.00, weight: 0.2 },
+      { id: 'SKU-002', name: 'Ergonomic Chair', category: 'Furniture', safety_stock: 10, price: 150.00, weight: 15.0 },
+      { id: 'SKU-003', name: 'Monitor Stand', category: 'Furniture', safety_stock: 20, price: 45.00, weight: 2.5 },
+      { id: 'SKU-004', name: 'USB-C Cable', category: 'Electronics', safety_stock: 100, price: 12.00, weight: 0.1 }
+    ],
+    // Detailed stock ledger
+    stock: [
+      {
+        id: 'STK-001', sku: 'SKU-001', warehouse_id: 'WH-001',
+        quantities: { available: 450, reserved: 20, damaged: 5 },
+        locations: [{ zone: 'A', rack: 'R1', bin: 'B1', qty: 475 }]
+      },
+      {
+        id: 'STK-002', sku: 'SKU-002', warehouse_id: 'WH-001',
+        quantities: { available: 8, reserved: 2, damaged: 0 },
+        locations: [{ zone: 'B', rack: 'R5', bin: 'Floor', qty: 10 }]
+      }
+    ],
+    // Audit log
+    movements: [
+      { id: 'M-001', date: '2024-03-20T10:00:00Z', type: 'RECEIPT', sku: 'SKU-001', qty: 500, ref: 'PO-1001', warehouse_id: 'WH-001' },
+      { id: 'M-002', date: '2024-03-21T14:30:00Z', type: 'PICK', sku: 'SKU-001', qty: -25, ref: 'ORD-5501', warehouse_id: 'WH-001' }
+    ]
   }
 };
 
@@ -109,6 +145,12 @@ const addBond = (bond) => {
   return bond;
 };
 
+// --- Finance ---
+const addLandedCost = (costSheet) => {
+  db.finance.landed_costs.push(costSheet);
+  return costSheet;
+}
+
 module.exports = {
   db,
   getAvailableVehicles,
@@ -121,5 +163,8 @@ module.exports = {
   addDeclaration,
   updateDeclarationStatus,
   addDuty,
-  addBond
+  addBond,
+  addLandedCost,
+  addIndent: (indent) => { db.imports.indents.push(indent); return indent; },
+  addBooking: (booking) => { db.exports.bookings.push(booking); return booking; }
 };

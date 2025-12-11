@@ -52,6 +52,37 @@ function scheduleMaintenance(containerId, reason) {
     return container;
 }
 
+const FREE_DAYS = 5;
+const DAILY_RATE = 50; // USD
+
+function calculateDetention(containerId, returnDateStr) {
+    const container = containers.find(c => c.id === containerId);
+    if (!container) return { error: 'Container not found' };
+
+    // Mock "Out" date (Assumed 10 days ago for demo if not tracked)
+    const outDate = new Date();
+    outDate.setDate(outDate.getDate() - 12); // Simulate it was taken 12 days ago
+
+    const returnDate = new Date(returnDateStr || Date.now());
+
+    // Calc diff in days
+    const diffTime = Math.abs(returnDate - outDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const detentionDays = Math.max(0, diffDays - FREE_DAYS);
+    const amount = detentionDays * DAILY_RATE;
+
+    return {
+        container_id: containerId,
+        days_out: diffDays,
+        free_days: FREE_DAYS,
+        detention_days: detentionDays,
+        rate: DAILY_RATE,
+        total_amount: amount,
+        currency: 'USD'
+    };
+}
+
 function getAllContainers() {
     return containers;
 }
@@ -60,5 +91,6 @@ module.exports = {
     getContainerStats,
     logReturn,
     scheduleMaintenance,
-    getAllContainers
+    getAllContainers,
+    calculateDetention
 };

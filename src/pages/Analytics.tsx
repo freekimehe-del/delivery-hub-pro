@@ -7,7 +7,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     async function load() {
-      const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+      const apiUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:4000';
       try {
         const resp = await fetch(`${apiUrl}/api/analytics/advanced`);
         if (resp.ok) {

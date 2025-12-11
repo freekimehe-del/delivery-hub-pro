@@ -1,7 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Plus, Search, Filter, Download } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Plus, Filter, FileDown, Download } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ReportEngine } from '@/lib/reports';
+import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 
 export default function Invoices() {
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -28,6 +48,22 @@ export default function Invoices() {
         }
     }
 
+    const handleExportExcel = () => {
+        exportToExcel(invoices, 'Invoices_Report', 'Invoices');
+    };
+
+    const handleExportPDF = () => {
+        const columns = [
+            { header: 'Invoice #', key: 'invoice_number' },
+            { header: 'Date', key: 'invoice_date' },
+            { header: 'Due Date', key: 'due_date' },
+            { header: 'Amount', key: 'total_amount' },
+            { header: 'Balance', key: 'balance' },
+            { header: 'Status', key: 'status' }
+        ];
+        exportToPDF(invoices, columns, 'Invoices Report', 'Invoices_Report');
+    };
+
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             draft: 'bg-gray-100 text-gray-800',
@@ -42,18 +78,36 @@ export default function Invoices() {
 
     return (
         <DashboardLayout>
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Invoices</h1>
                     <p className="text-muted-foreground">Manage customer invoices and receivables</p>
                 </div>
-                <Link
-                    to="/finance/invoices/create"
-                    className="px-4 py-2 rounded bg-primary text-white hover:bg-primary/90 flex items-center gap-2"
-                >
-                    <Plus className="w-4 h-4" />
-                    Create Invoice
-                </Link>
+
+                <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="gap-2">
+                                <FileDown className="h-4 w-4" /> Export
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleExportPDF}>Export as PDF</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleExportExcel}>Export as Excel</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Link
+                        to="/finance/invoices/create"
+                    >
+                        <Button className="gap-2">
+                            <Plus className="w-4 h-4" />
+                            Create Invoice
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {/* Filters */}
@@ -69,8 +123,8 @@ export default function Invoices() {
                                 key={status}
                                 onClick={() => setFilter(status)}
                                 className={`px-3 py-1 rounded text-sm ${filter === status
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -158,7 +212,19 @@ export default function Invoices() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         <div className="flex gap-2">
                                             <button className="text-blue-600 hover:text-blue-800">View</button>
-                                            <button className="text-green-600 hover:text-green-800">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleRowExportPDF(invoice)}
+                                                title="Export PDF (Table)"
+                                            >
+                                                <FileDown className="h-4 w-4 text-blue-600" />
+                                            </Button>
+                                            <button
+                                                className="text-green-600 hover:text-green-800"
+                                                onClick={() => ReportEngine.generateInvoicePDF(invoice)}
+                                                title="Download Invoice Form"
+                                            >
                                                 <Download className="w-4 h-4" />
                                             </button>
                                         </div>

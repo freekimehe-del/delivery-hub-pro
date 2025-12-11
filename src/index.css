@@ -126,39 +126,61 @@
 
 @layer utilities {
   .glass {
-    @apply bg-card/80 backdrop-blur-xl;
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+  
+  .glass-dark {
+    @apply bg-slate-900/70 backdrop-blur-md border border-white/10 shadow-lg;
+  }
+
+  .bg-mesh {
+    background-color: hsl(210 20% 98%);
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(217,91%,60%,0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(160,84%,39%,0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(217,91%,60%,0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(160,84%,39%,0.05) 0px, transparent 50%);
+    background-attachment: fixed;
   }
 
   .gradient-primary {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
   }
 
   .gradient-success {
-    background: var(--gradient-success);
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 84% 32%) 100%);
+  }
+  
+  .gradient-warning {
+    background: linear-gradient(135deg, hsl(45 93% 47%) 0%, hsl(35 90% 45%) 100%);
   }
 
   .gradient-hero {
-    background: var(--gradient-hero);
+    background: radial-gradient(circle at top right, #1E3A8A, #1D4ED8);
   }
 
   .shadow-glow {
-    box-shadow: var(--shadow-glow);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
 
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out forwards;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
+    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-pulse-slow {
-    animation: pulseSlow 3s ease-in-out infinite;
+    animation: pulseSlow 4s ease-in-out infinite;
   }
 }
 

@@ -8,7 +8,7 @@ const Shipments: React.FC = () => {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shipment_master')
         .select('*')
         .order('created_at', { ascending: false });

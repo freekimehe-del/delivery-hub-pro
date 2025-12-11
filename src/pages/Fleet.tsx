@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileDown } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FleetDashboard } from "@/components/fleet/FleetDashboard";
 import { VehicleTable } from "@/components/fleet/VehicleTable";
@@ -8,18 +8,73 @@ import { DriverTable } from "@/components/fleet/DriverTable";
 import { MaintenanceTable } from "@/components/fleet/MaintenanceTable";
 import { FuelTable } from "@/components/fleet/FuelTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 export default function Fleet() {
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Mock data getters (in real app, these would come from the child components or central store)
+  const getExportData = () => {
+    // Logic to get data based on active tab
+    // For now, using placeholders to demonstrate functionality
+    if (activeTab === 'vehicles') return [{ id: 'V001', plate: 'K-1234', type: 'Truck', status: 'Active' }];
+    if (activeTab === 'drivers') return [{ id: 'D001', name: 'Ahmed', license: 'L-999', status: 'On Trip' }];
+    return [];
+  };
+
+  const handleExportExcel = () => {
+    const data = getExportData();
+    if (data.length === 0) {
+      toast.info("No data to export for this view or view not supported.");
+      return;
+    }
+    exportToExcel(data, `${activeTab}_Report`, activeTab);
+  };
+
+  const handleExportPDF = () => {
+    const data = getExportData();
+    if (data.length === 0) {
+      toast.info("No data to export for this view or view not supported.");
+      return;
+    }
+    // Simple dynamic columns
+    const headers = Object.keys(data[0]).map(k => ({ header: k.toUpperCase(), key: k }));
+    exportToPDF(data, headers, `${activeTab.toUpperCase()} Report`, `${activeTab}_Report`);
+  };
+
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Fleet Management</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your vehicles, drivers, and maintenance schedules.
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Fleet Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your vehicles, drivers, and maintenance schedules.
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <FileDown className="h-4 w-4" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Export Current View</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExportPDF}>Export as PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>Export as Excel</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Tabs Navigation */}

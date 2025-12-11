@@ -25,14 +25,26 @@ const CreateManifest: React.FC = () => {
         legs: [{ from: "Shanghai", to: "Karachi", mode: "maritime" }] // Default leg
     });
 
+    const handleAutoBilty = () => {
+        setForm({
+            ...form,
+            transport_mode: "road",
+            port_of_loading: "Karachi",
+            port_of_discharge: "Lahore",
+            container_type: "standard",
+            instructions: "Auto-Generated Bilty Request"
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        const blNumber = "BL-" + Math.floor(Math.random() * 1000000);
+        const prefix = form.transport_mode === 'road' ? 'BILTY-' : 'BL-';
+        const docNumber = prefix + Math.floor(Math.random() * 1000000);
 
         const payload = {
-            manifest_number: blNumber,
+            manifest_number: docNumber,
             transport_mode: form.transport_mode,
             vessel_name: form.transport_mode === 'maritime' ? form.vessel_name : null,
             voyage_number: form.transport_mode === 'maritime' ? form.voyage_number : null,
@@ -45,17 +57,14 @@ const CreateManifest: React.FC = () => {
 
         try {
             const { data, error } = await supabase
-                .from('logistics_manifests')
+                .from('logistics_manifests' as any)
                 .insert([payload])
                 .select()
                 .single();
 
             if (error) throw error;
 
-            // If a clearance job was selected, link it (logic might vary depending on schema, but let's assume we update the job or shipment)
-            // For now, just success.
-
-            alert(`Success! Generated BL: ${data.manifest_number}`);
+            alert(`Success! Generated ${form.transport_mode === 'road' ? 'Bilty' : 'Manifest'}: ${data.manifest_number}`);
             navigate("/logistics/manifests");
         } catch (e: any) {
             console.error(e);
@@ -67,6 +76,10 @@ const CreateManifest: React.FC = () => {
 
     return (
         <DashboardLayout>
+
+
+
+
             <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight">Logistics Manifest</h1>
                 <p className="text-muted-foreground">Enter details to generate a manifest and auto-produce a BL.</p>
@@ -230,13 +243,20 @@ const CreateManifest: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 flex gap-4">
+                        <button
+                            type="button"
+                            onClick={handleAutoBilty}
+                            className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                        >
+                            BILTY Auto
+                        </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                            {loading ? 'Generating...' : 'Generate BL'}
+                            {loading ? 'Generating...' : (form.transport_mode === 'road' ? 'Generate Bilty' : 'Generate Manifest')}
                         </button>
                     </div>
                 </form>

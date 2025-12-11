@@ -8,11 +8,36 @@ import {
   Send,
   Route,
   FileSignature,
+  Search,
+  Plus,
+  Filter,
+  FileDown,
 } from "lucide-react";
 import { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { AllOrdersTab } from "@/components/orders/AllOrdersTab";
 import { DispatchTab } from "@/components/orders/DispatchTab";
 import { RoutesTab } from "@/components/orders/RoutesTab";
@@ -67,6 +92,24 @@ export default function Orders() {
     setActiveTab(stageToTab[stage]);
   };
 
+  const getExportData = () => {
+    // Mock export data logic - ideally fetches from the child components or central store
+    if (activeTab === 'all') return [{ id: 'ORD-001', customer: 'TechCorp', amount: 5000, status: 'Pending' }];
+    if (activeTab === 'dispatch') return [{ id: 'ORD-002', vehicle: 'Truck-1', driver: 'Ali', status: 'Dispatched' }];
+    return [];
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel(getExportData(), `Orders_${activeTab}`, activeTab);
+  };
+
+  const handleExportPDF = () => {
+    const data = getExportData();
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]).map(k => ({ header: k.toUpperCase(), key: k }));
+    exportToPDF(data, headers, `Orders Report - ${activeTab}`, `Orders_${activeTab}`);
+  };
+
   const metrics = [
     {
       title: "Pending Orders",
@@ -105,11 +148,26 @@ export default function Orders() {
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Orders Management</h1>
-        <p className="text-muted-foreground mt-1">
-          End-to-end order lifecycle from creation to proof of delivery.
-        </p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Orders Management</h1>
+          <p className="text-muted-foreground mt-1">
+            End-to-end order lifecycle from creation to proof of delivery.
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <FileDown className="h-4 w-4" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Export Current View</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExportPDF}>Export as PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>Export as Excel</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Workflow Pipeline */}

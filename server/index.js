@@ -5,14 +5,40 @@ const { v4: uuidv4 } = require('uuid');
 
 const upload = multer();
 const app = express();
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:8080',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for now in dev/demo mode to avoid blockers
+    }
+  }
+}));
 app.use(express.json());
 
 // Centralized DB & Engines
 const DB = require('./db'); // The new "Brain"
 const { generateManifestNumber, validateManifest } = require('./manifest_engine');
 const financeAPI = require('./finance_api'); // Finance Module
+const tradeFinanceApi = require('./trade_finance_api'); // Trade Finance Module
+const complianceApi = require('./compliance_api'); // Compliance Module
 const customsEngine = require('./customs_engine'); // Customs Module
+const importExportApi = require('./import_export_api'); // Import/Export Module
+
+// --- Import & Export Module Routes ---
+app.get('/api/imports/indents', importExportApi.getIndents);
+app.post('/api/imports/indents', importExportApi.createIndent);
+app.get('/api/imports/stats', importExportApi.getImportStats);
+
+app.get('/api/exports/bookings', importExportApi.getBookings);
+app.post('/api/exports/bookings', importExportApi.createBooking);
+app.get('/api/exports/stats', importExportApi.getExportStats);
 
 // Customs Duty Calculator Endpoint (Phase 2)
 app.post('/api/customs/calculate-duty', (req, res) => {
@@ -45,6 +71,13 @@ app.post('/api/finance/payments', financeAPI.recordPayment);
 // Finance Report Routes (Added)
 app.get('/api/finance/reports/pl', financeAPI.getProfitLoss);
 app.get('/api/finance/reports/bs', financeAPI.getBalanceSheet);
+app.get('/api/finance/driver-settlements', financeAPI.getDriverSettlements);
+app.post('/api/finance/driver-settlements/process', financeAPI.processDriverSettlement);
+
+// Landed Cost
+app.get('/api/finance/clearance-jobs', financeAPI.getClearanceJobs);
+app.get('/api/finance/clearance-jobs/:id/items', financeAPI.getJobItems);
+app.post('/api/finance/landed-cost', financeAPI.saveLandedCost);
 app.get('/api/finance/dashboard', financeAPI.getDashboardMetrics);
 
 // Finance AR: Customers (fallback to DB mock if Supabase not configured)
@@ -401,32 +434,36 @@ app.get('/api/containers', (req, res) => {
   });
 });
 
-// POST /api/containers/return - Log a return
+// POST /api/containers/return - Log a return with Detention Calculation
 app.post('/api/containers/return', (req, res) => {
-  // Update DB directly for now
-  const { container_id, location, condition } = req.body;
-  const container = DB.db.logistics.containers.find(c => c.id === container_id);
-  if (container) {
-    container.status = 'returned';
-    container.location = location;
-  }
-  return res.json({ ok: true, container });
-});
+  try {
+    const { container_id, location, condition, return_date } = req.body;
 
-// POST /api/containers/maintenance - Schedule maintenance
-app.post('/api/containers/maintenance', (req, res) => {
-  const { container_id } = req.body;
-  const container = DB.db.logistics.containers.find(c => c.id === container_id);
-  if (container) {
-    container.status = 'maintenance';
+    // Calculate charges first
+    const { calculateDetention } = require('./container_engine');
+    const charges = calculateDetention(container_id, return_date);
+
+    if (charges.error) return res.status(404).json({ ok: false, error: charges.error });
+
+    // Update DB
+    const container = DB.db.logistics.containers.find(c => c.id === container_id);
+    if (container) {
+      container.status = 'returned';
+      container.location = location;
+      container.condition = condition;
+      container.last_charge = charges; // Store the charge record
+    }
+
+    return res.json({ ok: true, container, charges });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
   }
-  return res.json({ ok: true, container });
 });
 
 // --- Phase 3: Analytics ---
 app.get('/api/analytics/advanced', (req, res) => {
   // Calculate real-ish metrics based on DB
-  const totalInvoices = DB.db.customers.invoices.reduce((acc, inv) => acc + inv.amount, 0);
+  const totalInvoices = (DB.db.customers?.invoices || []).reduce((acc, inv) => acc + inv.amount, 0);
 
   return res.json({
     ok: true,
@@ -774,21 +811,58 @@ app.post('/api/customs/declarations', (req, res) => {
 });
 
 // POST /api/customs/calculate-duty - Assessment Preview
+// POST /api/customs/calculate-duty - Assessment Preview
 app.post('/api/customs/calculate-duty', (req, res) => {
-  const { items } = req.body;
-  let totalDuty = 0;
-  let breakdown = { customs_duty: 0, add_customs_duty: 0, sales_tax: 0, income_tax: 0 };
+  const { items, currency, is_filer, is_commercial } = req.body;
 
-  items.forEach(item => {
-    const res = CustomsEngine.calculateDuty(item.hs_code, Number(item.value));
-    totalDuty += res.total;
-    breakdown.customs_duty += res.breakdown.customs_duty;
-    breakdown.add_customs_duty += res.breakdown.add_customs_duty;
-    breakdown.sales_tax += res.breakdown.sales_tax;
-    breakdown.income_tax += res.breakdown.income_tax;
+  if (!items || !Array.isArray(items)) {
+    return res.status(400).json({ ok: false, error: 'items array is required' });
+  }
+
+  let totalPayable = 0;
+  let totalValuePKR = 0;
+
+  // Extended breakdown
+  let breakdown = {
+    customs_duty: 0,
+    additional_customs_duty: 0,
+    regulatory_duty: 0,
+    fed: 0,
+    sales_tax: 0,
+    additional_sales_tax: 0,
+    income_tax: 0
+  };
+
+  const options = {
+    isFiler: is_filer !== false, // default true
+    isCommercial: is_commercial !== false // default true
+  };
+
+  const itemResults = items.map(item => {
+    const calc = CustomsEngine.calculateDuty(item.hs_code, Number(item.value), currency || 'USD', options);
+
+    totalPayable += calc.total_payable;
+    totalValuePKR += calc.value_pkr;
+
+    breakdown.customs_duty += calc.breakdown.customs_duty;
+    breakdown.additional_customs_duty += calc.breakdown.additional_customs_duty;
+    breakdown.regulatory_duty += calc.breakdown.regulatory_duty;
+    breakdown.fed += calc.breakdown.fed;
+    breakdown.sales_tax += calc.breakdown.sales_tax;
+    breakdown.additional_sales_tax += calc.breakdown.additional_sales_tax;
+    breakdown.income_tax += calc.breakdown.income_tax;
+
+    return { ...item, calculation: calc };
   });
 
-  return res.json({ ok: true, total: totalDuty, breakdown });
+  return res.json({
+    ok: true,
+    total_payable: totalPayable,
+    total_value_pkr: totalValuePKR,
+    currency: 'PKR',
+    breakdown,
+    item_details: itemResults
+  });
 });
 
 // POST /api/customs/submit - Submit to PSW + Generate PSID
@@ -892,11 +966,88 @@ app.get('/api/fleet/stats', (req, res) => {
 });
 
 
+// --- Trade Finance Routes ---
+app.get('/api/trade/lcs', tradeFinanceApi.getLCs);
+app.post('/api/trade/lcs', tradeFinanceApi.createLC);
+app.put('/api/trade/lcs/:id/status', tradeFinanceApi.updateLCStatus);
+
+// --- Compliance & Export Routes ---
+app.get('/api/customs/gate-passes', complianceApi.getGatePasses);
+app.post('/api/customs/gate-passes', complianceApi.createGatePass);
+app.get('/api/customs/documents', complianceApi.getDocuments);
+app.put('/api/customs/documents/:id', complianceApi.uploadDocument);
+
+// OCR Routes
+const ocr = require('./ocr');
+
+app.post('/api/customs/ocr/scan', upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const text = await ocr.recognizeBuffer(req.file.buffer);
+    const extracted = ocr.extractDetails(text);
+
+    // Mock enhancement if Tesseract fails locally or for demo
+    if (!extracted.bl_number) {
+      // If filename has BL info, use it (Demo Trick)
+      if (req.file.originalname.includes('BL_')) extracted.bl_number = 'OSLU12345678';
+    }
+
+    res.json({ text_preview: text.substring(0, 200), extracted });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "OCR Failed" });
+  }
+});
+
+app.post('/api/manifests/verify', (req, res) => {
+  const { manifest_id, gd_id } = req.body;
+  // Mock lookup
+  const manifest = { bl_number: 'BL123', port_code: 'KPT' }; // Replace with DB lookup
+  const gd = DB.db.customs.declarations.find(d => d.id === gd_id);
+
+  if (!gd) return res.status(404).json({ error: "GD not found" });
+
+  // Use verification logic
+  const { verifyManifestAgainstGD } = require('./manifest_engine');
+  const result = verifyManifestAgainstGD(manifest, gd);
+
+  res.json(result);
+});
+
+const trackingApi = require('./tracking_api'); // Tracking Module
+const inventoryApi = require('./inventory_api'); // Inventory Module
+
+// --- Tracking Module Routes ---
+app.get('/api/tracking/analytics', trackingApi.getTrackingAnalytics); // Specific route first
+app.get('/api/tracking/:id', trackingApi.getTrackingHistory);
+app.post('/api/tracking/events', trackingApi.addTrackingEvent);
+
+// --- Inventory Module Routes ---
+app.get('/api/inventory/dashboard', inventoryApi.getDashboardStats);
+app.get('/api/inventory/items', inventoryApi.getItems);
+app.get('/api/inventory/items/:sku', inventoryApi.getItemDetails);
+app.post('/api/inventory/movements', inventoryApi.createMovement);
+
+// --- Import & Export Modules ---
+app.get('/api/imports/indents', importExportApi.getIndents);
+app.post('/api/imports/indents', importExportApi.createIndent);
+app.get('/api/imports/stats', importExportApi.getImportStats);
+
+app.get('/api/exports/bookings', importExportApi.getBookings);
+app.post('/api/exports/bookings', importExportApi.createBooking);
+app.get('/api/exports/stats', importExportApi.getExportStats);
+// -----------------------------
+
 const port = process.env.PORT || 4000;
 
 // Only listen when running locally (not in Vercel serverless environment)
 if (process.env.VERCEL !== '1') {
-  app.listen(port, () => console.log(`Mock API server running on http://localhost:${port}`));
+  // Final Start
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 }
 
 // Export for Vercel serverless

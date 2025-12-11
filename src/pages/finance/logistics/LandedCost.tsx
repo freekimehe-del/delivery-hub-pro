@@ -42,43 +42,23 @@ const LandedCost: React.FC = () => {
     }, [selectedJob]);
 
     const fetchJobs = async () => {
-        const { data } = await supabase.from('clearance_jobs').select('*').order('created_at', { ascending: false });
-        if (data) setJobs(data);
+        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
+        try {
+            const res = await fetch(`${apiUrl}/api/finance/clearance-jobs`);
+            const json = await res.json();
+            if (json.jobs) setJobs(json.jobs);
+        } catch (e) {
+            console.error("Failed to fetch jobs", e);
+        }
     };
 
     const fetchJobItems = async (jobId: string) => {
         setLoading(true);
+        const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
         try {
-            // 1. Get the GD for this job
-            const { data: gd } = await supabase
-                .from('goods_declarations')
-                .select('id')
-                .eq('job_id', jobId)
-                .single();
-
-            if (!gd) {
-                setItems([]); // No GD filed yet
-                return;
-            }
-
-            // 2. Get Line Items
-            const { data: lineItems } = await supabase
-                .from('gd_line_items')
-                .select('*')
-                .eq('gd_id', gd.id);
-
-            if (lineItems) {
-                // Map DB items to UI format
-                const mappedItems = lineItems.map((item: any) => ({
-                    id: item.id,
-                    name: item.description || 'Unknown Item',
-                    qty: item.quantity || 0,
-                    unit_price: item.unit_value_usd || 0,
-                    // If duty is calculated, use it. Else estimate 30% for demo
-                    duty_paid: item.duty_amount || (item.assessable_value_pkr * 0.30) || 0
-                }));
-                setItems(mappedItems);
-            }
+            const res = await fetch(`${apiUrl}/api/finance/clearance-jobs/${jobId}/items`);
+            const json = await res.json();
+            if (json.items) setItems(json.items);
         } catch (error) {
             console.error("Error fetching items:", error);
         } finally {
@@ -245,16 +225,20 @@ const LandedCost: React.FC = () => {
                             <button className="px-4 py-2 border rounded hover:bg-gray-50" onClick={() => window.print()}>Export PDF</button>
                             <button
                                 onClick={async () => {
+                                    const apiUrl = (window as any).__API_BASE__ || 'http://localhost:4000';
                                     try {
-                                        const { error } = await supabase
-                                            .from('landed_cost_sheets')
-                                            .insert([{
+                                        const resp = await fetch(`${apiUrl}/api/finance/landed-cost`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
                                                 job_id: selectedJob.id,
                                                 total_cost_pkr: totalJobCost,
                                                 cost_data: { costs, items: allocatedItems }
-                                            }]);
-                                        if (error) throw error;
-                                        alert("Costing Saved Successfully!");
+                                            })
+                                        });
+
+                                        if (!resp.ok) throw new Error("Failed to save");
+                                        alert("Costing Saved Successfully via Finance API!");
                                     } catch (e: any) {
                                         alert("Error saving: " + e.message);
                                     }
