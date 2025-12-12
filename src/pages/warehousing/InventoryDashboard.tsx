@@ -84,7 +84,7 @@ export default function InventoryDashboard() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-slate-800">${stats.metrics.stock_value.toLocaleString()}</div>
+                            <div className="text-3xl font-bold text-slate-800">Rs. {stats.metrics.stock_value.toLocaleString()}</div>
                             <p className="text-xs text-muted-foreground mt-1">Across all warehouses</p>
                         </CardContent>
                     </Card>

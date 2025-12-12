@@ -30,6 +30,13 @@ const tradeFinanceApi = require('./trade_finance_api'); // Trade Finance Module
 const complianceApi = require('./compliance_api'); // Compliance Module
 const customsEngine = require('./customs_engine'); // Customs Module
 const importExportApi = require('./import_export_api'); // Import/Export Module
+const tripApi = require('./trip_api'); // Trip Management Module
+
+// --- Trip Module Routes ---
+app.use('/api/fleet', tripApi);
+app.use('/api', require('./order_api'));
+app.use('/api/transit', require('./transit_api'));
+app.use('/api/dnd', require('./dnd_api'));
 
 // --- Import & Export Module Routes ---
 app.get('/api/imports/indents', importExportApi.getIndents);
@@ -784,12 +791,8 @@ app.get('/api/manifests', (req, res) => {
 });
 
 // --- Phase 7: Customs Clearance Module ---
-const CustomsEngine = require('./customs_engine');
-
-// GET /api/customs/declarations - List
-app.get('/api/customs/declarations', (req, res) => {
-  return res.json({ ok: true, declarations: DB.db.customs.declarations });
-});
+// --- Phase 7: Customs Clearance Module ---
+app.use('/api/customs', require('./customs_api'));
 
 // POST /api/customs/declarations - Create Draft
 app.post('/api/customs/declarations', (req, res) => {
@@ -1017,6 +1020,18 @@ app.post('/api/manifests/verify', (req, res) => {
 
 const trackingApi = require('./tracking_api'); // Tracking Module
 const inventoryApi = require('./inventory_api'); // Inventory Module
+const authApi = require('./auth_api'); // Auth Module
+const notificationsApi = require('./notifications_api'); // Notifications Module
+const fleetApi = require('./fleet_api'); // Fleet Module
+
+// --- Auth Routes ---
+app.use('/api/auth', authApi);
+
+// --- Notification Routes ---
+app.use('/api/notifications', notificationsApi);
+
+// --- Fleet Routes ---
+app.use('/api/fleet', fleetApi);
 
 // --- Tracking Module Routes ---
 app.get('/api/tracking/analytics', trackingApi.getTrackingAnalytics); // Specific route first

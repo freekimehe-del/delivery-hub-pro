@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, FileDown } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FleetDashboard } from "@/components/fleet/FleetDashboard";
 import { VehicleTable } from "@/components/fleet/VehicleTable";
@@ -21,7 +22,30 @@ import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { toast } from "sonner";
 
 export default function Fleet() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Sync tab with URL
+  useEffect(() => {
+    if (location.pathname.includes("/fleet/vehicles")) setActiveTab("vehicles");
+    else if (location.pathname.includes("/fleet/drivers")) setActiveTab("drivers");
+    else if (location.pathname.includes("/fleet/maintenance")) setActiveTab("maintenance");
+    else if (location.pathname.includes("/fleet/fuel")) setActiveTab("fuel");
+    else setActiveTab("overview");
+  }, [location.pathname]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    switch (value) {
+      case "vehicles": navigate("/fleet/vehicles"); break;
+      case "drivers": navigate("/fleet/drivers"); break;
+      case "maintenance": navigate("/fleet/maintenance"); break;
+      case "fuel": navigate("/fleet/fuel"); break;
+      default: navigate("/fleet");
+    }
+  };
+
 
   // Mock data getters (in real app, these would come from the child components or central store)
   const getExportData = () => {
@@ -78,7 +102,7 @@ export default function Fleet() {
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="overview" className="data-[state=active]:bg-background">
             Overview

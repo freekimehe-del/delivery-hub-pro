@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type VehicleStatus = "active" | "idle" | "maintenance" | "offline";
+export type VehicleStatus = "active" | "idle" | "maintenance" | "offline" | "available" | "in_transit" | "scheduled";
 export type AcquisitionType = "purchase" | "lease" | "rental";
 export type VehicleCondition = "excellent" | "good" | "fair" | "poor";
 
@@ -75,17 +74,15 @@ export interface CreateVehicleData {
   insurance_policy_number?: string;
 }
 
+const API_BASE = 'http://localhost:4000/api/fleet';
+
 export function useVehicles() {
   return useQuery({
     queryKey: ["vehicles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Vehicle[];
+      const res = await fetch(`${API_BASE}/vehicles`);
+      if (!res.ok) throw new Error("Failed to fetch vehicles");
+      return res.json() as Promise<Vehicle[]>;
     },
   });
 }
@@ -94,14 +91,11 @@ export function useVehicle(id: string) {
   return useQuery({
     queryKey: ["vehicles", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as Vehicle | null;
+      const res = await fetch(`${API_BASE}/vehicles`);
+      if (!res.ok) throw new Error("Failed to fetch vehicles");
+      const vehicles = await res.json();
+      const vehicle = vehicles.find((v: Vehicle) => v.id === id);
+      return vehicle as Vehicle | null;
     },
     enabled: !!id,
   });
@@ -112,14 +106,13 @@ export function useCreateVehicle() {
 
   return useMutation({
     mutationFn: async (vehicle: CreateVehicleData) => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .insert(vehicle)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Vehicle;
+      const res = await fetch(`${API_BASE}/vehicles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle)
+      });
+      if (!res.ok) throw new Error("Failed to create vehicle");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
@@ -136,15 +129,13 @@ export function useUpdateVehicle() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Vehicle> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Vehicle;
+      const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error("Failed to update vehicle");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
@@ -161,8 +152,10 @@ export function useDeleteVehicle() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("vehicles").delete().eq("id", id);
-      if (error) throw error;
+      const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error("Failed to delete vehicle");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });

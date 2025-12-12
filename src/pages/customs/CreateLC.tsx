@@ -25,7 +25,7 @@ const CreateLC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { register, handleSubmit, formState: { errors } } = useForm<LCFormValues>({
         defaultValues: {
-            currency: 'USD',
+            currency: 'PKR',
             bank_name: 'Bank Alfalah'
         }
     });

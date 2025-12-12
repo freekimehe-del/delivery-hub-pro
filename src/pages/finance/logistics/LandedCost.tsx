@@ -19,7 +19,7 @@ const LandedCost: React.FC = () => {
 
     // Cost Heads
     const [costs, setCosts] = useState<CostHead[]>([
-        { id: 'freight', label: 'Ocean Freight', amount: 0, currency: 'USD', exRate: 278 },
+        { id: 'freight', label: 'Ocean Freight', amount: 0, currency: 'PKR', exRate: 1 },
         { id: 'insurance', label: 'Marine Insurance', amount: 0, currency: 'PKR', exRate: 1 },
         { id: 'terminal', label: 'Terminal Handling (THC)', amount: 0, currency: 'PKR', exRate: 1 },
         { id: 'agency', label: 'Agency / Clearing Fees', amount: 0, currency: 'PKR', exRate: 1 },
@@ -156,8 +156,8 @@ const LandedCost: React.FC = () => {
                                                     value={cost.currency}
                                                     onChange={e => handleCostChange(cost.id, 'currency', e.target.value)}
                                                 >
-                                                    <option>USD</option>
                                                     <option>PKR</option>
+                                                    <option>USD</option>
                                                 </select>
                                             </div>
                                         </div>

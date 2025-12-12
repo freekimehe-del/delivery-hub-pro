@@ -2,7 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Login from "./pages/auth/Login";
+import UserManagement from "./pages/settings/UserManagement";
+
 import Index from "./pages/Index";
 import CommandCenter from "./pages/CommandCenter";
 import Fleet from "./pages/Fleet";
@@ -15,7 +20,10 @@ import Customs, { CustomsContent } from "./pages/Customs";
 import CustomsWizard from "./pages/customs/CustomsWizard";
 import CustomsLayout from "./pages/customs/CustomsLayout";
 import GoodsDeclaration from "./pages/customs/GoodsDeclaration";
+import GDDashboard from "./pages/customs/GDDashboard";
+import GDForm from "./pages/customs/GDForm";
 import TradeFinanceDashboard from "./pages/customs/TradeFinanceDashboard";
+import BiltyGenerator from "./pages/logistics/BiltyGenerator";
 import CreateLC from "./pages/customs/CreateLC";
 import ComplianceDashboard from "./pages/customs/ComplianceDashboard";
 import ExportGatePass from "./pages/customs/ExportGatePass";
@@ -47,7 +55,7 @@ import DutyCalculator from "./pages/customs/DutyCalculator";
 import ClearanceDashboard from "./pages/clearance/ClearanceDashboard";
 import GDFiling from "./pages/clearance/GDFiling";
 import LandedCost from "./pages/finance/logistics/LandedCost";
-import WarehouseDashboard from "./pages/warehousing/Dashboard"; // Keeping existing as legacy or sub-view?
+import WarehouseDashboard from "./pages/warehousing/Dashboard";
 import InventoryDashboard from "./pages/warehousing/InventoryDashboard";
 import StockMovement from "./pages/warehousing/StockMovement";
 import WarehouseInventory from "./pages/warehousing/Inventory";
@@ -58,7 +66,15 @@ import ExportDashboard from "./pages/exports/ExportDashboard";
 import ExportBookings from "./pages/exports/Bookings";
 import TrackingDashboard from "./pages/logistics/tracking/TrackingDashboard";
 import TrackingView from "./pages/logistics/tracking/TrackingView";
-import { DollarSign, PieChart } from "lucide-react";
+import TripManagement from "./pages/fleet/TripManagement";
+import TripPlanner from "./pages/fleet/TripPlanner";
+import TripDetail from "./pages/fleet/TripDetail";
+import TransitDashboard from "./pages/logistics/TransitDashboard";
+import DndDashboard from "./pages/logistics/DndDashboard";
+import FuelManagement from "./pages/fleet/FuelManagement";
+
+// imports cleaned up
+import PlaceholderPage from "./pages/PlaceholderPage";
 
 const queryClient = new QueryClient();
 
@@ -67,96 +83,156 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/command-center" element={<CommandCenter />} />
-          <Route path="/fleet" element={<Fleet />} />
-          <Route path="/fleet/vehicles" element={<Fleet />} />
-          <Route path="/fleet/drivers" element={<Fleet />} />
-          <Route path="/fleet/maintenance" element={<Fleet />} />
-          <Route path="/fleet/fuel" element={<Fleet />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/orders/dispatch" element={<Orders />} />
-          <Route path="/orders/routes" element={<Orders />} />
-          <Route path="/orders/pod" element={<Orders />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/customers/billing" element={<Customers />} />
-          <Route path="/customers/invoices" element={<Customers />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/logistics" element={<Logistics />} />
-          <Route path="/logistics/shipments" element={<Shipments />} />
-          <Route path="/logistics/create" element={<CreateShipment />} />
-          <Route path="/logistics/bookings" element={<Bookings />} />
-          <Route path="/logistics/bookings/create" element={<CreateBooking />} />
-          <Route path="/logistics/bookings/:id" element={<BookingDetails />} />
-          <Route path="/logistics/bookings/:id/edit" element={<CreateBooking />} />
-          <Route path="/logistics/manifests" element={<Manifests />} />
-          <Route path="/logistics/manifests/create" element={<CreateManifest />} />
-          <Route path="/logistics/manifests/:id" element={<CreateManifest />} />
-          <Route path="/logistics/manifests/:id/edit" element={<CreateManifest />} />
-          <Route path="/logistics/pod" element={<POD />} />
-          <Route path="/logistics/containers" element={<Containers />} />
-          <Route path="/logistics/ai-optimizer" element={<AIOptimizer />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/logistics/ai-optimizer" element={<AIOptimizer />} />
-          <Route path="/logistics/tracking" element={<TrackingDashboard />} />
-          <Route path="/logistics/tracking/:id" element={<TrackingView />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/command-center" element={<CommandCenter />} />
 
-          <Route path="/logistics/customs" element={<CustomsLayout />}>
-            <Route index element={<CustomsContent />} />
-            <Route path="new-gd" element={<GoodsDeclaration />} />
-            <Route path="calculator" element={<DutyCalculator />} />
-            <Route path="trade-finance" element={<TradeFinanceDashboard />} />
-            <Route path="trade-finance/new-lc" element={<CreateLC />} />
-            <Route path="compliance" element={<ComplianceDashboard />} />
-            <Route path="gate-pass" element={<ExportGatePass />} />
-          </Route>
 
-          <Route path="/clearance" element={<ClearanceDashboard />} />
-          <Route path="/clearance/new" element={<NewClearanceJob />} />
-          <Route path="/clearance/:jobId/file-gd" element={<GDFiling />} />
-          <Route path="/customs/calculator" element={<DutyCalculator />} />
-          <Route path="/customs/filing" element={<CustomsWizard />} />
-          <Route path="/customs/consignments" element={<Customs />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/*" element={<Orders />} />
 
-          <Route path="/customs/hs-codes" element={<HSCodes />} />
-          <Route path="/customs/auctions" element={<Customs />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/customers/*" element={<Customers />} />
 
-          <Route path="/warehousing" element={<InventoryDashboard />} />
-          <Route path="/warehousing/operations" element={<WarehouseDashboard />} />
-          <Route path="/warehousing/inventory" element={<WarehouseInventory />} />
-          <Route path="/warehousing/movements" element={<StockMovement />} />
-          <Route path="/warehousing/reports" element={<WarehouseReports />} />
+              <Route path="/analytics" element={<Analytics />} />
 
-          <Route path="/imports" element={<ImportDashboard />} />
-          <Route path="/imports/indents" element={<Indents />} />
-          <Route path="/exports" element={<ExportDashboard />} />
-          <Route path="/exports/bookings" element={<ExportBookings />} />
+              {/* Logistics Module */}
+              <Route path="/logistics" element={<Logistics />} />
+              <Route path="/logistics/shipments" element={<Shipments />} />
+              <Route path="/logistics/create" element={<CreateShipment />} />
+              <Route path="/logistics/bookings" element={<Bookings />} />
+              <Route path="/logistics/bookings/*" element={<CreateBooking />} />
+              <Route path="/logistics/manifests" element={<Manifests />} />
+              <Route path="/logistics/manifests/*" element={<CreateManifest />} />
+              <Route path="/logistics/pod" element={<POD />} />
+              <Route path="/logistics/containers" element={<Containers />} />
+              <Route path="/logistics/ai-optimizer" element={<AIOptimizer />} />
+              <Route path="/logistics/tracking" element={<TrackingDashboard />} />
+              <Route path="/logistics/tracking/:id" element={<TrackingView />} />
+              <Route path="/logistics/transit" element={<TransitDashboard />} />
+              <Route path="/logistics/dnd" element={<DndDashboard />} />
+              <Route path="/logistics/bilty" element={<BiltyGenerator />} />
 
-          <Route path="/finance" element={<FinanceDashboard />} />
-          <Route path="/finance/dashboard" element={<FinanceDashboard />} />
-          <Route path="/finance/invoices" element={<Invoices />} />
-          <Route path="/finance/invoices/create" element={<CreateInvoice />} />
-          <Route path="/finance/bills" element={<Bills />} />
-          <Route path="/finance/bills/new" element={<CreateBill />} />
-          <Route path="/finance/settlements" element={<DriverSettlements />} />
-          <Route path="/finance/fleet-costs" element={<FleetCosting />} />
-          <Route path="/finance/cost-estimator" element={<CostEstimator />} />
-          <Route path="/finance/landed-cost" element={<LandedCost />} />
-          <Route path="/finance/reports" element={<FinancialReports />} />
-          <Route path="/api" element={<ApiDocs />} />
-          <Route path="/api/docs" element={<ApiDocs />} />
-          <Route path="/api/keys" element={<ApiDocs />} />
-          <Route path="/api/webhooks" element={<ApiDocs />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/company" element={<Settings />} />
-          <Route path="/settings/notifications" element={<Settings />} />
-          <Route path="/settings/areas" element={<Settings />} />
-          <Route path="/settings/roles" element={<Roles />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+              {/* Customs Module */}
+              <Route path="/logistics/customs" element={<CustomsLayout />}>
+                <Route index element={<GDDashboard />} />
+                <Route path="new-gd" element={<GDForm />} />
+                <Route path="calculator" element={<DutyCalculator />} />
+                <Route path="trade-finance" element={<TradeFinanceDashboard />} />
+                <Route path="trade-finance/new-lc" element={<CreateLC />} />
+                <Route path="compliance" element={<ComplianceDashboard />} />
+                <Route path="gate-pass" element={<ExportGatePass />} />
+                <Route path="dashboard" element={<GDDashboard />} />
+                <Route path=":id" element={<GDForm />} /> {/* View/Edit Mode */}
+              </Route>
+
+              <Route path="/clearance" element={<ClearanceDashboard />} />
+              <Route path="/clearance/*" element={<ClearanceDashboard />} />
+
+              <Route path="/customs/calculator" element={<DutyCalculator />} />
+              <Route path="/customs/*" element={<Customs />} />
+
+              {/* Warehouse Dept */}
+              <Route path="/warehousing" element={<InventoryDashboard />} />
+              <Route path="/warehousing/inventory" element={<WarehouseInventory />} />
+              <Route path="/warehousing/movements" element={<StockMovement />} />
+              <Route path="/warehousing/operations" element={<WarehouseDashboard />} />
+              <Route path="/warehousing/putaway" element={<PlaceholderPage />} />
+              <Route path="/warehousing/picking" element={<PlaceholderPage />} />
+              <Route path="/warehousing/shipping" element={<PlaceholderPage />} />
+              <Route path="/warehousing/qc" element={<PlaceholderPage />} />
+              <Route path="/warehousing/reports" element={<WarehouseReports />} />
+
+              {/* Fleet & Transport Dept */}
+              <Route path="/fleet" element={<Fleet />} />
+              <Route path="/fleet/vehicles" element={<Fleet />} />
+              <Route path="/fleet/drivers" element={<Fleet />} />
+              <Route path="/fleet/fuel" element={<Fleet />} />
+              <Route path="/fleet/maintenance" element={<Fleet />} />
+
+              {/* Trip Management */}
+              <Route path="/fleet/trip-management" element={<TripManagement />} />
+              <Route path="/fleet/trip-management/new" element={<TripPlanner />} />
+              <Route path="/fleet/trip-management/:id" element={<TripDetail />} />
+
+              {/* Operations Dept */}
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/*" element={<Orders />} />
+              <Route path="/operations/dispatch" element={<Orders />} />
+              <Route path="/operations/customers" element={<Customers />} />
+              <Route path="/operations/vendors" element={<PlaceholderPage />} />
+              <Route path="/operations/performance" element={<Analytics />} />
+
+              {/* Customs & Compliance Dept */}
+              <Route path="/logistics/manifests" element={<Manifests />} />
+              <Route path="/customs/docs" element={<PlaceholderPage />} />
+              <Route path="/logistics/customs" element={<CustomsLayout />}>
+                <Route index element={<CustomsContent />} />
+                <Route path="new-gd" element={<GoodsDeclaration />} />
+                <Route path="calculator" element={<DutyCalculator />} />
+                <Route path="trade-finance" element={<TradeFinanceDashboard />} />
+                <Route path="trade-finance/new-lc" element={<CreateLC />} />
+                <Route path="compliance" element={<ComplianceDashboard />} />
+                <Route path="gate-pass" element={<ExportGatePass />} />
+              </Route>
+              <Route path="/customs/compliance" element={<PlaceholderPage />} />
+              <Route path="/customs/reports" element={<PlaceholderPage />} />
+
+              {/* Finance Dept */}
+              <Route path="/finance" element={<FinanceDashboard />} />
+              <Route path="/finance/dashboard" element={<FinanceDashboard />} />
+              <Route path="/finance/invoices" element={<Invoices />} />
+              <Route path="/finance/bills" element={<Bills />} />
+              <Route path="/finance/payments" element={<PlaceholderPage />} />
+              <Route path="/finance/expenses" element={<PlaceholderPage />} />
+              <Route path="/finance/reports" element={<FinancialReports />} />
+              <Route path="/finance/budget" element={<PlaceholderPage />} />
+
+              {/* Customer Service Dept */}
+              <Route path="/service/tracking" element={<TrackingDashboard />} />
+              <Route path="/service/support" element={<PlaceholderPage />} />
+              <Route path="/service/complaints" element={<PlaceholderPage />} />
+              <Route path="/service/updates" element={<PlaceholderPage />} />
+              <Route path="/service/portal" element={<PlaceholderPage />} />
+
+              {/* Legacy / Compatibility Routes (Keep for now) */}
+              <Route path="/imports" element={<ImportDashboard />} />
+              <Route path="/imports/indents" element={<Indents />} />
+              <Route path="/exports" element={<ExportDashboard />} />
+              <Route path="/exports/bookings" element={<ExportBookings />} />
+
+              {/* Finance Module */}
+              <Route path="/finance" element={<FinanceDashboard />} />
+              <Route path="/finance/*" element={<FinanceDashboard />} />
+              <Route path="/finance/dashboard" element={<FinanceDashboard />} />
+              <Route path="/finance/invoices" element={<Invoices />} />
+              <Route path="/finance/invoices/create" element={<CreateInvoice />} />
+              <Route path="/finance/bills" element={<Bills />} />
+              <Route path="/finance/bills/new" element={<CreateBill />} />
+              <Route path="/finance/settlements" element={<DriverSettlements />} />
+              <Route path="/finance/fleet-costs" element={<FleetCosting />} />
+              <Route path="/finance/cost-estimator" element={<CostEstimator />} />
+              <Route path="/finance/landed-cost" element={<LandedCost />} />
+              <Route path="/finance/reports" element={<FinancialReports />} />
+
+              <Route path="/api" element={<ApiDocs />} />
+              <Route path="/api/*" element={<ApiDocs />} />
+
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/*" element={<Settings />} />
+              <Route path="/settings/users" element={<UserManagement />} />
+              <Route path="/settings/roles" element={<Roles />} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

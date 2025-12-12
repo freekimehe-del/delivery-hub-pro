@@ -31,29 +31,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const notifications = [
-  {
-    id: 1,
-    title: "New order received",
-    description: "Order #FB123456 from Acme Corp",
-    time: "2 min ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    title: "Driver assigned",
-    description: "John D. assigned to route #R-2024",
-    time: "15 min ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    title: "Delivery completed",
-    description: "Order #FB123450 delivered successfully",
-    time: "1 hour ago",
-    unread: false,
-  },
-];
+// notifications managed via API
 
 const quickActions = [
   { icon: Package, label: "New Order", color: "bg-primary" },
@@ -61,8 +39,39 @@ const quickActions = [
   { icon: Users, label: "Add Driver", color: "bg-fleet-purple" },
 ];
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 export function TopBar() {
   const [searchFocused, setSearchFocused] = useState(false);
+  const queryClient = useQueryClient();
+  const apiUrl = (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await fetch(`${apiUrl}/api/notifications`);
+      return res.json();
+    },
+    refetchInterval: 30000,
+  });
+
+  const { mutate: markRead } = useMutation({
+    mutationFn: async (id: any) => {
+      await fetch(`${apiUrl}/api/notifications/${id}/read`, { method: "PUT" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
+  });
+
+  const { mutate: markAllRead } = useMutation({
+    mutationFn: async () => {
+      await fetch(`${apiUrl}/api/notifications/read-all`, { method: "PUT" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
+  });
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-40">
@@ -114,45 +123,57 @@ export function TopBar() {
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
+              {notifications.some((n: any) => !n.read) && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {notifications.filter((n: any) => !n.read).length}
+                </span>
+              )}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0">
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Notifications</h4>
-                <Button variant="ghost" size="sm" className="text-xs text-primary">
+                <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => markAllRead()}>
                   Mark all read
                 </Button>
               </div>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    "p-4 border-b border-border last:border-0 cursor-pointer transition-colors hover:bg-muted/50",
-                    notification.unread && "bg-primary/5"
-                  )}
-                >
-                  <div className="flex gap-3">
-                    {notification.unread && (
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
+              {isLoading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+              ) : (
+                notifications.map((notification: any) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => markRead(notification.id)}
+                    className={cn(
+                      "p-4 border-b border-border last:border-0 cursor-pointer transition-colors hover:bg-muted/50",
+                      !notification.read && "bg-primary/5"
                     )}
-                    <div className={cn(!notification.unread && "ml-5")}>
-                      <p className="text-sm font-medium">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {notification.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {notification.time}
-                      </p>
+                  >
+                    <div className="flex gap-3">
+                      {!notification.read && (
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
+                      )}
+                      <div className={cn(notification.read && "ml-5")}>
+                        <p className="text-sm font-medium">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {notification.time}
+                        </p>
+                        <Badge variant={notification.type === 'warning' ? 'destructive' : 'secondary'} className="mt-2 text-[10px] h-5">
+                          {notification.type}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <div className="p-3 border-t border-border">
               <Button variant="ghost" size="sm" className="w-full text-primary">

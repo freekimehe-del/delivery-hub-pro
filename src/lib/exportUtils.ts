@@ -79,7 +79,7 @@ export const exportToPDF = async (
 };
 
 // --- Helpers ---
-export const formatCurrency = (amount: number, currency = 'USD') => {
+export const formatCurrency = (amount: number, currency = 'PKR') => {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,

@@ -133,7 +133,7 @@ export default function WarehouseInventory() {
                                                     {item.stock.reserved}
                                                 </TableCell>
                                                 <TableCell className="text-right text-muted-foreground">
-                                                    ${(item.stock.available * item.price).toLocaleString()}
+                                                    Rs. {(item.stock.available * item.price).toLocaleString()}
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     {item.stock.available <= item.safety_stock ? (

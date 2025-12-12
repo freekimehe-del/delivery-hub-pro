@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Truck,
   Package,
+  Bell,
+  Ship,
   Users,
   BarChart3,
   Settings,
@@ -21,7 +23,6 @@ import {
   PieChart,
   DollarSign,
   Activity,
-  Ship,
   Anchor,
   CreditCard,
   FileText,
@@ -29,7 +30,8 @@ import {
   Menu,
   Code2,
   BookOpen,
-  Key
+  Key,
+  Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,88 +48,102 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'command-center', icon: Activity, label: "Command Center", path: "/command-center" },
   { id: 'dashboard', icon: LayoutDashboard, label: "Dashboard", path: "/" },
+
+  // 1. Warehouse Dept
+  {
+    id: 'warehouse',
+    icon: Warehouse,
+    label: "Warehouse Dept",
+    children: [
+      { icon: Box, label: "Inventory Mgmt", path: "/warehousing/inventory" },
+      { icon: ArrowDownToLine, label: "Receiving Ops", path: "/warehousing/movements" },
+      { icon: Box, label: "Put-away", path: "/warehousing/putaway" },
+      { icon: Package, label: "Picking & Packing", path: "/warehousing/picking" },
+      { icon: Truck, label: "Shipping Ops", path: "/warehousing/shipping" },
+      { icon: Activity, label: "Quality Control", path: "/warehousing/qc" },
+    ],
+  },
+
+  // 2. Fleet & Transport
   {
     id: 'fleet',
     icon: Truck,
-    label: "Fleet Management",
+    label: "Fleet & Transport",
     children: [
-      { icon: Car, label: "Vehicles", path: "/fleet/vehicles" },
-      { icon: UserCircle, label: "Drivers", path: "/fleet/drivers" },
+      { icon: Car, label: "Vehicle Mgmt", path: "/fleet/vehicles" },
+      { icon: UserCircle, label: "Driver Mgmt", path: "/fleet/drivers" },
+      { icon: Fuel, label: "Fuel Mgmt", path: "/fleet/fuel" },
       { icon: Wrench, label: "Maintenance", path: "/fleet/maintenance" },
-      { icon: Fuel, label: "Fuel Management", path: "/fleet/fuel" },
+      { icon: MapPin, label: "Trip Mgmt", path: "/fleet/trip-management" },
     ],
   },
+
+  // 3. Operations Dept
   {
-    id: 'orders',
-    icon: Package,
-    label: "Orders Management",
+    id: 'operations',
+    icon: Activity,
+    label: "Operations & Logistics",
     children: [
-      { icon: Package, label: "All Orders", path: "/orders" },
-      { icon: MapPin, label: "Dispatch Center", path: "/orders/dispatch" },
-      { icon: Map, label: "Route Planning", path: "/orders/routes" },
-      { icon: FileText, label: "Proof of Delivery", path: "/orders/pod" },
-    ],
-  },
-  {
-    id: 'warehousing',
-    icon: Warehouse,
-    label: "Warehousing",
-    children: [
-      { icon: Warehouse, label: "Warehouse View", path: "/warehousing" },
-      { icon: Box, label: "Stock Levels", path: "/warehousing/inventory" },
-      { icon: ArrowDownToLine, label: "Receiving", path: "/warehousing/movements" },
-    ],
-  },
-  {
-    id: 'logistics',
-    icon: Map,
-    label: "Logistics Hub",
-    children: [
+      { icon: Package, label: "Order Processing", path: "/orders" },
+      { icon: Ship, label: "Shipments (Freight)", path: "/logistics/shipments" },
+      { icon: FileText, label: "Bookings", path: "/logistics/bookings" },
       { icon: FileText, label: "Manifests", path: "/logistics/manifests" },
-      { icon: Map, label: "Live Tracking", path: "/logistics/tracking" },
+      { icon: Box, label: "Container Mgmt", path: "/logistics/containers" },
+      { icon: MapPin, label: "Dispatch Mgmt", path: "/operations/dispatch" },
+      { icon: Users, label: "Vendor Mgmt", path: "/operations/vendors" },
+      { icon: BarChart3, label: "Performance", path: "/operations/performance" },
+      { icon: Globe, label: "Transit Logistics", path: "/logistics/transit" },
+      { icon: DollarSign, label: "Demurrage & Detention", path: "/logistics/dnd" },
+      { icon: FileText, label: "Urdu Bilty Generator", path: "/logistics/bilty" },
     ]
   },
+
+  // 4. Customs & Compliance
   {
-    id: 'global-trade',
-    icon: Ship,
-    label: "Global Trade",
+    id: 'customs',
+    icon: FileText,
+    label: "Customs & Compliance",
     children: [
-      { icon: Ship, label: "Imports", path: "/imports" },
-      { icon: Anchor, label: "Exports", path: "/exports" },
-      { icon: FileText, label: "Customs", path: "/logistics/customs/new-gd" },
+      { icon: Ship, label: "Import Dashboard", path: "/imports" },
+      { icon: Anchor, label: "Export Dashboard", path: "/exports" },
+      { icon: FileText, label: "Import/Export Docs", path: "/customs/docs" },
+      { icon: Code2, label: "Customs Clearance", path: "/logistics/customs/new-gd" },
+      { icon: Activity, label: "Compliance Checks", path: "/logistics/customs/compliance" },
+      { icon: DollarSign, label: "Duty Calculation", path: "/customs/calculator" },
+      { icon: FileText, label: "Regulatory Reports", path: "/customs/reports" },
     ]
   },
-  {
-    id: 'customers',
-    icon: Users,
-    label: "Customers",
-    children: [
-      { icon: Users, label: "All Customers", path: "/customers" },
-      { icon: CreditCard, label: "Billing", path: "/customers/billing" },
-      { icon: FileText, label: "Invoices", path: "/customers/invoices" },
-    ],
-  },
-  {
-    id: 'analytics',
-    icon: BarChart3,
-    label: "Analytics",
-    children: [
-      { icon: Activity, label: "Performance", path: "/analytics" },
-      { icon: DollarSign, label: "Financial", path: "/finance/dashboard" },
-      { icon: PieChart, label: "Efficiency", path: "/logistics/ai-optimizer" },
-    ],
-  },
+
+  // 5. Finance Dept
   {
     id: 'finance',
-    icon: CreditCard,
-    label: "Finance",
+    icon: DollarSign,
+    label: "Finance Dept",
     children: [
-      { icon: FileText, label: "Invoices", path: "/finance/invoices" },
-      { icon: DollarSign, label: "Settlements", path: "/finance/settlements" },
+      { icon: FileText, label: "Billing & Invoicing", path: "/finance/invoices" },
+      { icon: CreditCard, label: "Payment Processing", path: "/finance/payments" },
+      { icon: DollarSign, label: "Expense Mgmt", path: "/finance/expenses" },
+      { icon: BarChart3, label: "Financial Reporting", path: "/finance/reports" },
+      { icon: PieChart, label: "Budget Mgmt", path: "/finance/budget" },
     ]
   },
+
+  // 6. Customer Service
+  {
+    id: 'service',
+    icon: Users,
+    label: "Customer Service",
+    children: [
+      { icon: Search, label: "Order Tracking", path: "/service/tracking" },
+      { icon: UserCircle, label: "Customer Support", path: "/service/support" },
+      { icon: Activity, label: "Complaint Mgmt", path: "/service/complaints" },
+      { icon: Bell, label: "Service Updates", path: "/service/updates" },
+      { icon: Code2, label: "Customer Portal", path: "/service/portal" },
+    ]
+  },
+
+  // API & Developers (Restored)
   {
     id: 'api',
     icon: Code2,
@@ -137,10 +153,12 @@ const navItems: NavItem[] = [
       { icon: Key, label: "API Keys", path: "/api/keys" },
     ],
   },
+
+  // System
   {
     id: 'settings',
     icon: Settings,
-    label: "Settings",
+    label: "System Settings",
     children: [
       { icon: Users, label: "User Management", path: "/settings/users" },
       { icon: Activity, label: "System Config", path: "/settings/config" },

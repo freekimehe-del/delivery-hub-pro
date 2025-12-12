@@ -116,7 +116,7 @@ const TradeFinanceDashboard = () => {
                         <div>
                             <p className="text-sm font-medium text-blue-100">Total Exposure</p>
                             <h3 className="text-3xl font-bold mt-1">
-                                ${lcs.reduce((acc, curr) => acc + (curr.currency === 'USD' ? curr.amount : 0), 0).toLocaleString()}
+                                Rs. {lcs.reduce((acc, curr) => acc + (curr.currency === 'PKR' ? curr.amount : curr.amount * 278), 0).toLocaleString()}
                             </h3>
                         </div>
                     </div>

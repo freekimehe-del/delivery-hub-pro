@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface MaintenanceRecord {
@@ -30,6 +29,7 @@ export interface MaintenanceRecord {
     id: string;
     name: string;
     license_plate: string;
+    plate?: string; // Handle both naming conventions
   } | null;
   reported_by?: {
     id: string;
@@ -39,20 +39,15 @@ export interface MaintenanceRecord {
   } | null;
 }
 
+const API_BASE = 'http://localhost:4000/api/fleet';
+
 export function useMaintenance() {
   return useQuery({
     queryKey: ["maintenance_records"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenance_records")
-        .select(`
-          *,
-          vehicle:vehicles(id, name, license_plate),
-          reported_by:drivers!reported_by_driver_id(id, profile:profiles(full_name))
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const res = await fetch(`${API_BASE}/maintenance`);
+      if (!res.ok) throw new Error("Failed to fetch records");
+      const data = await res.json();
       return data as MaintenanceRecord[];
     },
   });
@@ -63,14 +58,10 @@ export function useMaintenanceByVehicle(vehicleId: string | null) {
     queryKey: ["maintenance_records", "vehicle", vehicleId],
     queryFn: async () => {
       if (!vehicleId) return [];
-      const { data, error } = await supabase
-        .from("maintenance_records")
-        .select("*")
-        .eq("vehicle_id", vehicleId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
+      const res = await fetch(`${API_BASE}/maintenance`); // Filtering client-side for mock
+      if (!res.ok) throw new Error("Failed to fetch records");
+      const data = await res.json();
+      return data.filter((r: MaintenanceRecord) => r.vehicle_id === vehicleId);
     },
     enabled: !!vehicleId,
   });
@@ -80,25 +71,14 @@ export function useMaintenanceMutations() {
   const queryClient = useQueryClient();
 
   const createMaintenance = useMutation({
-    mutationFn: async (record: {
-      vehicle_id: string;
-      maintenance_type: string;
-      priority: string;
-      title: string;
-      description?: string;
-      scheduled_date?: string;
-      triggered_by?: string;
-      vendor_name?: string;
-      notes?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from("maintenance_records")
-        .insert(record)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+    mutationFn: async (record: Partial<MaintenanceRecord>) => {
+      const res = await fetch(`${API_BASE}/maintenance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      if (!res.ok) throw new Error("Failed to create record");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance_records"] });
@@ -110,29 +90,14 @@ export function useMaintenanceMutations() {
   });
 
   const updateMaintenance = useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: {
-      id: string;
-      status?: string;
-      started_at?: string;
-      completed_at?: string;
-      labor_cost?: number;
-      parts_cost?: number;
-      work_performed?: string;
-      technician_name?: string;
-      notes?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from("maintenance_records")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ id, ...updates }: any) => {
+      const res = await fetch(`${API_BASE}/maintenance/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error("Failed to update record");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance_records"] });
@@ -145,12 +110,10 @@ export function useMaintenanceMutations() {
 
   const deleteMaintenance = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("maintenance_records")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      const res = await fetch(`${API_BASE}/maintenance/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error("Failed to delete record");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance_records"] });
